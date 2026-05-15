@@ -18,6 +18,24 @@
       "agent": "Sisyphus-Junior",
       "category": "quick",
       "updated_at": "2026-05-15T06:45:33.968Z"
+    },
+    "todo:2": {
+      "task_key": "todo:2",
+      "task_label": "2",
+      "task_title": "Utils Module with TDD",
+      "session_id": "ses_1d59abf30ffeYHmFLRyPh6Hzz1",
+      "agent": "Sisyphus-Junior",
+      "category": "unspecified-high",
+      "updated_at": "2026-05-15T07:09:55.950Z"
+    },
+    "todo:3": {
+      "task_key": "todo:3",
+      "task_label": "3",
+      "task_title": "Proof-of-Concept Widget + Marimo Validation",
+      "session_id": "ses_1d54ce446ffeQCzCG1Cil02ULR",
+      "agent": "Sisyphus-Junior",
+      "category": "deep",
+      "updated_at": "2026-05-15T08:19:20.635Z"
     }
   }
 }

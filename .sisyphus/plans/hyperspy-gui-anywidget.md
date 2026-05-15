@@ -194,7 +194,7 @@ Max Concurrent: 5 (Wave 2)
 
 ## TODOs
 
-- [ ] 1. Project Scaffolding + Configuration
+- [x] 1. Project Scaffolding + Configuration
 
   **What to do**:
   - Activate the `hyperspy-dev` conda environment: `conda activate hyperspy-dev`
@@ -315,7 +315,7 @@ Max Concurrent: 5 (Wave 2)
   - Files: `pyproject.toml`, `__init__.py`, `hyperspy_extension.yaml`, `conftest.py`, `tests/__init__.py`, `tests/utils.py`, `.gitignore`, `LICENSE`, `README.md`, all placeholder source modules
   - Pre-commit: `pip install -e . && python -c "import hyperspy_gui_anywidget"`
 
-- [ ] 2. Utils Module with TDD
+- [x] 2. Utils Module with TDD
 
   **What to do**:
   - Write tests first in `tests/test_utils.py`:
