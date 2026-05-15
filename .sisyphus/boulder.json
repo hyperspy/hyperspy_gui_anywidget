@@ -1,0 +1,23 @@
+{
+  "active_plan": "/Users/francisco/Git/hyperspy_gui_anywidget/.sisyphus/plans/hyperspy-gui-anywidget.md",
+  "started_at": "2026-05-15T06:32:39.972Z",
+  "session_ids": [
+    "ses_1d5c35356ffegSWyKNtBBkDOXz"
+  ],
+  "session_origins": {
+    "ses_1d5c35356ffegSWyKNtBBkDOXz": "direct"
+  },
+  "plan_name": "hyperspy-gui-anywidget",
+  "agent": "atlas",
+  "task_sessions": {
+    "todo:1": {
+      "task_key": "todo:1",
+      "task_label": "1",
+      "task_title": "Project Scaffolding + Configuration",
+      "session_id": "ses_1d5a6bdd6ffeBuCC8NhLNolSse",
+      "agent": "Sisyphus-Junior",
+      "category": "quick",
+      "updated_at": "2026-05-15T06:45:33.968Z"
+    }
+  }
+}

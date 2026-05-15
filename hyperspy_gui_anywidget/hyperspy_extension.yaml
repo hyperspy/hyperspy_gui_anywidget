@@ -1,0 +1,102 @@
+GUI:
+  widgets:
+    anywidget:
+      hyperspy.interactive_range_selector:
+        module: hyperspy_gui_anywidget.tools
+        function: interactive_range_aw
+      hyperspy.navigation_sliders:
+        module: hyperspy_gui_anywidget.axes
+        function: aw_navigation_sliders
+      hyperspy.Preferences:
+        module: hyperspy_gui_anywidget.preferences
+        function: show_preferences_widget
+      exspy.Preferences:
+        module: hyperspy_gui_anywidget.preferences
+        function: show_exspy_preferences_widget
+      hyperspy.DataAxis:
+        module: hyperspy_gui_anywidget.axes
+        function: _get_axis_widgets
+      hyperspy.AxesManager:
+        module: hyperspy_gui_anywidget.axes
+        function: aw_axes_gui
+      hyperspy.Parameter:
+        module: hyperspy_gui_anywidget.model
+        function: get_parameter_widget
+      hyperspy.Component:
+        module: hyperspy_gui_anywidget.model
+        function: get_component_widget
+      exspy.EELSCLEdge_Component:
+        module: hyperspy_gui_anywidget.model
+        function: get_eelscl_widget
+      exspy.EELSSpectrum.print_edges_table:
+        module: hyperspy_gui_anywidget.tools
+        function: print_edges_table_aw
+      hyperspy.ScalableFixedPattern_Component:
+        module: hyperspy_gui_anywidget.model
+        function: get_scalable_fixed_patter_widget
+      hyperspy.Signal1D.calibrate:
+        module: hyperspy_gui_anywidget.tools
+        function: calibrate_aw
+      hyperspy.Signal1D.smooth_savitzky_golay:
+        module: hyperspy_gui_anywidget.tools
+        function: smooth_savitzky_golay_aw
+      hyperspy.Signal1D.smooth_lowess:
+        module: hyperspy_gui_anywidget.tools
+        function: smooth_lowess_aw
+      hyperspy.Signal1D.smooth_total_variation:
+        module: hyperspy_gui_anywidget.tools
+        function: smooth_tv_aw
+      hyperspy.Signal1D.smooth_butterworth:
+        module: hyperspy_gui_anywidget.tools
+        function: smooth_butterworth_aw
+      hyperspy.Signal1D.contrast_editor:
+        module: hyperspy_gui_anywidget.tools
+        function: image_constast_editor_aw
+      hyperspy.Signal1D.remove_background:
+        module: hyperspy_gui_anywidget.tools
+        function: remove_background_aw
+      hyperspy.Signal1D.remove_baseline:
+        module: hyperspy_gui_anywidget.tools
+        function: remove_baseline_aw
+      hyperspy.Signal1D.spikes_removal_tool:
+        module: hyperspy_gui_anywidget.tools
+        function: spikes_removal_aw
+      hyperspy.Signal2D.find_peaks:
+        module: hyperspy_gui_anywidget.tools
+        function: find_peaks2D_aw
+      hyperspy.Signal2D.calibrate:
+        module: hyperspy_gui_anywidget.tools
+        function: calibrate2d_aw
+      hyperspy.Point1DROI:
+        module: hyperspy_gui_anywidget.roi
+        function: point1d_roi_aw
+      hyperspy.Point2DROI:
+        module: hyperspy_gui_anywidget.roi
+        function: point_2d_aw
+      hyperspy.SpanROI:
+        module: hyperspy_gui_anywidget.roi
+        function: span_roi_aw
+      hyperspy.RectangularROI:
+        module: hyperspy_gui_anywidget.roi
+        function: rectangular_roi_aw
+      hyperspy.CircleROI:
+        module: hyperspy_gui_anywidget.roi
+        function: circle_roi_aw
+      hyperspy.Line2DROI:
+        module: hyperspy_gui_anywidget.roi
+        function: line2d_roi_aw
+      hyperspy.Model:
+        module: hyperspy_gui_anywidget.model
+        function: get_model_widget
+      hyperspy.Model1D.fit_component:
+        module: hyperspy_gui_anywidget.model
+        function: fit_component_aw
+      exspy.microscope_parameters_EELS:
+        module: hyperspy_gui_anywidget.microscope_parameters
+        function: eels_microscope_parameter_aw
+      exspy.microscope_parameters_EDS_TEM:
+        module: hyperspy_gui_anywidget.microscope_parameters
+        function: eds_tem_microscope_parameter_aw
+      exspy.microscope_parameters_EDS_SEM:
+        module: hyperspy_gui_anywidget.microscope_parameters
+        function: eds_sem_microscope_parameter_aw

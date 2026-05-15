@@ -1,0 +1,1 @@
+# Placeholder module for microscope_parameters GUI

@@ -1,0 +1,96 @@
+[build-system]
+requires = ["hatchling", "setuptools_scm>=8"]
+build-backend = "hatchling.build"
+
+[project]
+name = "hyperspy_gui_anywidget"
+description = "anywidget GUI elements for the HyperSpy framework."
+requires-python = ">=3.10"
+readme = "README.md"
+keywords=[
+    "data analysis",
+    "microscopy",
+    "anywidget",
+    "hyperspy",
+    "multi-dimensional",
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Intended Audience :: Developers",
+  "Intended Audience :: Science/Research",
+  "Topic :: Software Development :: Libraries",
+  "Topic :: Scientific/Engineering",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: POSIX",
+  "Operating System :: Unix",
+  "Operating System :: MacOS",
+]
+dependencies = [
+  "hyperspy>=2.3.0",
+  "anywidget>=0.9.0",
+  "link_traits",
+  "traitlets>=5.0",
+]
+version = "0.1.0"
+
+[project.entry-points."hyperspy.extensions"]
+hyperspy_gui_anywidget = "hyperspy_gui_anywidget"
+
+[project.license]
+text = "GPLv3"
+
+[project.optional-dependencies]
+tests = [
+  "pytest",
+  "pytest-cov",
+]
+dev = [
+  "ruff",
+  "marimo",
+]
+
+[project.urls]
+"Homepage" = "https://github.com/hyperspy/hyperspy_gui_anywidget"
+"Bug Reports" = "https://github.com/hyperspy/hyperspy_gui_anywidget/issues"
+"Source" = "https://github.com/hyperspy/hyperspy_gui_anywidget"
+
+[tool.hatch.version]
+source = "literal"
+build = "0.1.0"
+
+[tool.hatch.build.targets.wheel]
+packages = ["hyperspy_gui_anywidget"]
+data = [
+  "hyperspy_gui_anywidget/*.yaml"
+]
+
+[tool.hatch.build.targets.sdist]
+include = [
+  "hyperspy_gui_anywidget",
+]
+
+[tool.pytest.ini_options]
+addopts = "-ra"
+minversion = "6.0"
+testpaths = [
+  "hyperspy_gui_anywidget/tests",
+]
+
+[tool.coverage.run]
+branch = true
+source = ["hyperspy_gui_anywidget"]
+omit = [
+  "hyperspy_gui_anywidget/tests/*",
+  "hyperspy_gui_anywidget/conftest.py",
+]
+
+[tool.coverage.report]
+precision = 2
+
+[tool.ruff]
+line-length = 100
