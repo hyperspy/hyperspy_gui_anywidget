@@ -3,9 +3,6 @@
 #
 # Test that the package can be imported and has a version attribute
 
-import pytest
-
-
 def test_import():
     """Test that the package can be imported."""
     import hyperspy_gui_anywidget  # noqa: F401

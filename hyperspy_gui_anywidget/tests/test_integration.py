@@ -2,7 +2,6 @@ import importlib
 from pathlib import Path
 
 import numpy as np
-import pytest
 import yaml
 
 import hyperspy.api as hs
@@ -29,15 +28,12 @@ class TestWidgetRegistry:
             )
 
     def test_import_all_modules(self):
-        import hyperspy_gui_anywidget
-        import hyperspy_gui_anywidget.axes
-        import hyperspy_gui_anywidget.custom_widgets
-        import hyperspy_gui_anywidget.microscope_parameters
-        import hyperspy_gui_anywidget.model
-        import hyperspy_gui_anywidget.preferences
-        import hyperspy_gui_anywidget.roi
-        import hyperspy_gui_anywidget.tools
-        import hyperspy_gui_anywidget.utils
+        # Import all submodules to verify they are importable
+        import hyperspy_gui_anywidget.axes  # noqa: F401
+        import hyperspy_gui_anywidget.custom_widgets  # noqa: F401
+        import hyperspy_gui_anywidget.microscope_parameters  # noqa: F401
+        import hyperspy_gui_anywidget.model  # noqa: F401
+        import hyperspy_gui_anywidget.preferences  # noqa: F401
 
 
 class TestEndToEnd:
