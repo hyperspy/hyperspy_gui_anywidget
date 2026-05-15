@@ -1,3 +1,5 @@
+"""Interactive tool widgets for HyperSpy signals using anywidget."""
+
 import traits.api as t
 
 from link_traits import link
@@ -19,6 +21,21 @@ from hyperspy_gui_anywidget.custom_widgets import (
 
 @add_display_arg
 def interactive_range_aw(obj, **kwargs):
+    """Build a widget for interactive range selection.
+
+    Parameters
+    ----------
+    obj : hyperspy.signal_tools.InteractiveRangeSelector
+        The interactive range selector instance.
+    **kwargs
+        Passed through to the widget builder.
+
+    Returns
+    -------
+    dict or None
+        ``{"widget": ContainerWidget, "wdict": {...}}`` when
+        ``display=False``, otherwise ``None`` (widget displayed inline).
+    """
     wdict = {}
     axis = obj.axis
     left = FloatTextWidget(disabled=True, description="Left")
@@ -82,6 +99,21 @@ def interactive_range_aw(obj, **kwargs):
 
 @add_display_arg
 def calibrate2d_aw(obj, **kwargs):
+    """Build a widget for 2D signal calibration.
+
+    Parameters
+    ----------
+    obj : hyperspy.signal_tools.Calibrate2D
+        The 2D calibration tool instance.
+    **kwargs
+        Passed through to the widget builder.
+
+    Returns
+    -------
+    dict or None
+        ``{"widget": ContainerWidget, "wdict": {...}}`` when
+        ``display=False``, otherwise ``None`` (widget displayed inline).
+    """
     wdict = {}
     length = FloatTextWidget(disabled=True, description="Current length")
     scale = FloatTextWidget(disabled=True, description="Scale")
@@ -152,6 +184,21 @@ def calibrate2d_aw(obj, **kwargs):
 
 @add_display_arg
 def calibrate_aw(obj, **kwargs):
+    """Build a widget for 1D signal calibration.
+
+    Parameters
+    ----------
+    obj : hyperspy.signal_tools.Calibrate
+        The 1D calibration tool instance.
+    **kwargs
+        Passed through to the widget builder.
+
+    Returns
+    -------
+    dict or None
+        ``{"widget": ContainerWidget, "wdict": {...}}`` when
+        ``display=False``, otherwise ``None`` (widget displayed inline).
+    """
     wdict = {}
     left = FloatTextWidget(disabled=True, description="Left")
     right = FloatTextWidget(disabled=True, description="Right")
@@ -238,6 +285,21 @@ def calibrate_aw(obj, **kwargs):
 
 @add_display_arg
 def print_edges_table_aw(obj, **kwargs):
+    """Build a widget for printing EELS edges table.
+
+    Parameters
+    ----------
+    obj : hyperspy.signal_tools.PrintEdgesTable
+        The edges table tool instance.
+    **kwargs
+        Passed through to the widget builder.
+
+    Returns
+    -------
+    dict or None
+        ``{"widget": ContainerWidget, "wdict": {...}}`` when
+        ``display=False``, otherwise ``None`` (widget displayed inline).
+    """
     wdict = {}
     axis = obj.axis
     left = FloatTextWidget(disabled=True, description="Left")
@@ -372,6 +434,21 @@ def print_edges_table_aw(obj, **kwargs):
 
 @add_display_arg
 def smooth_savitzky_golay_aw(obj, **kwargs):
+    """Build a widget for Savitzky-Golay smoothing.
+
+    Parameters
+    ----------
+    obj : hyperspy.signal_tools.SmoothSavitzkyGolay
+        The smoothing tool instance.
+    **kwargs
+        Passed through to the widget builder.
+
+    Returns
+    -------
+    dict or None
+        ``{"widget": ContainerWidget, "wdict": {...}}`` when
+        ``display=False``, otherwise ``None`` (widget displayed inline).
+    """
     wdict = {}
     window_length = OddIntSliderWidget(
         value=3, step=2, min=3, max=max(int(obj.axis.size * 0.25), 3), description="Window length"
@@ -438,6 +515,21 @@ def smooth_savitzky_golay_aw(obj, **kwargs):
 
 @add_display_arg
 def smooth_lowess_aw(obj, **kwargs):
+    """Build a widget for LOWESS smoothing.
+
+    Parameters
+    ----------
+    obj : hyperspy.signal_tools.SmoothLowess
+        The LOWESS smoothing tool instance.
+    **kwargs
+        Passed through to the widget builder.
+
+    Returns
+    -------
+    dict or None
+        ``{"widget": ContainerWidget, "wdict": {...}}`` when
+        ``display=False``, otherwise ``None`` (widget displayed inline).
+    """
     wdict = {}
     smoothing_parameter = FloatSliderWidget(min=0, max=1, description="Smoothing parameter")
     number_of_iterations = IntTextWidget(description="Number of iterations")
@@ -487,6 +579,21 @@ def smooth_lowess_aw(obj, **kwargs):
 
 @add_display_arg
 def smooth_tv_aw(obj, **kwargs):
+    """Build a widget for total variation smoothing.
+
+    Parameters
+    ----------
+    obj : hyperspy.signal_tools.SmoothTV
+        The total variation smoothing tool instance.
+    **kwargs
+        Passed through to the widget builder.
+
+    Returns
+    -------
+    dict or None
+        ``{"widget": ContainerWidget, "wdict": {...}}`` when
+        ``display=False``, otherwise ``None`` (widget displayed inline).
+    """
     wdict = {}
     smoothing_parameter = FloatSliderWidget(min=0.1, max=1000, description="Weight")
     smoothing_parameter_max = FloatTextWidget(value=smoothing_parameter.max, description="Weight max")
@@ -536,6 +643,21 @@ def smooth_tv_aw(obj, **kwargs):
 
 @add_display_arg
 def remove_background_aw(obj, **kwargs):
+    """Build a widget for background removal.
+
+    Parameters
+    ----------
+    obj : hyperspy.signal_tools.BackgroundRemoval
+        The background removal tool instance.
+    **kwargs
+        Passed through to the widget builder.
+
+    Returns
+    -------
+    dict or None
+        ``{"widget": ContainerWidget, "wdict": {...}}`` when
+        ``display=False``, otherwise ``None`` (widget displayed inline).
+    """
     wdict = {}
     left = FloatTextWidget(disabled=True, description="Left")
     right = FloatTextWidget(disabled=True, description="Right")
@@ -631,6 +753,21 @@ def remove_background_aw(obj, **kwargs):
 
 @add_display_arg
 def image_constast_editor_aw(obj, **kwargs):
+    """Build a widget for image contrast editing.
+
+    Parameters
+    ----------
+    obj : hyperspy.signal_tools.ImageContrastEditor
+        The image contrast editor tool instance.
+    **kwargs
+        Passed through to the widget builder.
+
+    Returns
+    -------
+    dict or None
+        ``{"widget": ContainerWidget, "wdict": {...}}`` when
+        ``display=False``, otherwise ``None`` (widget displayed inline).
+    """
     wdict = {}
     left = FloatTextWidget(disabled=True, description="Vmin")
     right = FloatTextWidget(disabled=True, description="Vmax")
@@ -730,6 +867,21 @@ def image_constast_editor_aw(obj, **kwargs):
 
 @add_display_arg
 def spikes_removal_aw(obj, **kwargs):
+    """Build a widget for spikes removal.
+
+    Parameters
+    ----------
+    obj : hyperspy.signal_tools.SpikesRemoval
+        The spikes removal tool instance.
+    **kwargs
+        Passed through to the widget builder.
+
+    Returns
+    -------
+    dict or None
+        ``{"widget": ContainerWidget, "wdict": {...}}`` when
+        ``display=False``, otherwise ``None`` (widget displayed inline).
+    """
     wdict = {}
     threshold = FloatTextWidget(description="Threshold")
     add_noise = CheckboxWidget(description="Add noise")
@@ -828,6 +980,21 @@ def spikes_removal_aw(obj, **kwargs):
 
 @add_display_arg
 def remove_baseline_aw(obj, **kwargs):
+    """Build a widget for baseline removal.
+
+    Parameters
+    ----------
+    obj : hyperspy.signal_tools.BaselineRemoval
+        The baseline removal tool instance.
+    **kwargs
+        Passed through to the widget builder.
+
+    Returns
+    -------
+    dict or None
+        ``{"widget": ContainerWidget, "wdict": {...}}`` when
+        ``display=False``, otherwise ``None`` (widget displayed inline).
+    """
     wdict = {}
     algorithm = enum2dropdown(obj.traits()["algorithm"], description="Method")
     _time_per_pixel = FloatTextWidget(disabled=True, description="Time per pixel (ms)")
@@ -970,6 +1137,21 @@ def remove_baseline_aw(obj, **kwargs):
 
 @add_display_arg
 def smooth_butterworth_aw(obj, **kwargs):
+    """Build a widget for Butterworth smoothing.
+
+    Parameters
+    ----------
+    obj : hyperspy.signal_tools.SmoothButterworth
+        The Butterworth smoothing tool instance.
+    **kwargs
+        Passed through to the widget builder.
+
+    Returns
+    -------
+    dict or None
+        ``{"widget": ContainerWidget, "wdict": {...}}`` when
+        ``display=False``, otherwise ``None`` (widget displayed inline).
+    """
     wdict = {}
     cutoff = FloatSliderWidget(min=0.01, max=1., description="Cutoff")
     order = IntTextWidget(description="Order")
@@ -1021,6 +1203,21 @@ def smooth_butterworth_aw(obj, **kwargs):
 
 @add_display_arg
 def find_peaks2D_aw(obj, **kwargs):
+    """Build a widget for 2D peak finding.
+
+    Parameters
+    ----------
+    obj : hyperspy.signal_tools.PeakFinder2D
+        The 2D peak finder tool instance.
+    **kwargs
+        Passed through to the widget builder.
+
+    Returns
+    -------
+    dict or None
+        ``{"widget": ContainerWidget, "wdict": {...}}`` when
+        ``display=False``, otherwise ``None`` (widget displayed inline).
+    """
     wdict = {}
     local_max_distance = IntSliderWidget(min=1, max=20, value=3, description="Distance")
     local_max_threshold = FloatSliderWidget(min=0, max=20, value=10, description="Threshold")

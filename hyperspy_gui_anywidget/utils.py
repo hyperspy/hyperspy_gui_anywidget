@@ -1,4 +1,10 @@
 # -*- coding: utf-8 -*-
+"""Utility functions and base widgets for hyperspy_gui_anywidget.
+
+This module provides small AnyWidget subclasses used as building blocks
+throughout the package, plus helper functions for labeling, trait-to-widget
+conversion, and the ``add_display_arg`` decorator.
+"""
 
 import functools
 import sys
@@ -146,6 +152,21 @@ class _LabeledSandwich(anywidget.AnyWidget):
 
 
 def labelme(label, widget):
+    """Wrap a widget with a left-side label using ``_Labeled``.
+
+    Parameters
+    ----------
+    label : str
+        Text to display on the left of the widget.
+    widget : anywidget.AnyWidget
+        Widget instance whose ``value`` and ``description_tooltip`` are
+        copied into the wrapper.
+
+    Returns
+    -------
+    _Labeled
+        A labeled AnyWidget instance.
+    """
     if label is Undefined:
         label = ""
     if not isinstance(label, str):
@@ -156,6 +177,23 @@ def labelme(label, widget):
 
 
 def labelme_sandwich(label1, widget, label2):
+    """Wrap a widget with labels on both sides using ``_LabeledSandwich``.
+
+    Parameters
+    ----------
+    label1 : str
+        Text to display on the left of the widget.
+    widget : anywidget.AnyWidget
+        Widget instance whose ``value`` and ``description_tooltip`` are
+        copied into the wrapper.
+    label2 : str
+        Text to display on the right of the widget.
+
+    Returns
+    -------
+    _LabeledSandwich
+        A sandwich-labeled AnyWidget instance.
+    """
     if label1 is Undefined:
         label1 = ""
     if label2 is Undefined:
@@ -170,13 +208,50 @@ def labelme_sandwich(label1, widget, label2):
 
 
 def get_label(trait, label):
+    """Return a human-readable label for a trait.
+
+    If the trait defines a ``label``, it is used. Otherwise the supplied
+    ``label`` is formatted (underscores become spaces, first letter
+    capitalised).
+
+    Parameters
+    ----------
+    trait : traits.api.TraitType
+        The trait object to inspect.
+    label : str
+        Fallback label text.
+
+    Returns
+    -------
+    str
+        Formatted label string.
+    """
     label = (label.replace("_", " ").capitalize()
              if not trait.label else trait.label)
     return label
 
 
 def enum2dropdown(trait, description=None, **kwargs):
+    """Convert an Enum trait into a ``_Dropdown`` widget.
+
+    Parameters
+    ----------
+    trait : traits.api.TraitType
+        Trait whose ``trait_type.values`` defines the dropdown options.
+    description : str, optional
+        Description text for the widget.
+    **kwargs
+        Ignored. Kept for API compatibility.
+
+    Returns
+    -------
+    _Dropdown or _Text
+        A dropdown widget if the trait has enumerated values, otherwise a
+        plain text widget.
+    """
     values = trait.trait_type.values
+    if values is None:
+        return _Text(value="", description=description or "")
     widget = _Dropdown(
         options=list(values),
         value=values[0] if values else "",
@@ -189,6 +264,20 @@ def enum2dropdown(trait, description=None, **kwargs):
 
 
 def float2floattext(trait, label):
+    """Convert a float trait into a labeled ``_FloatText`` widget.
+
+    Parameters
+    ----------
+    trait : traits.api.TraitType
+        Trait to convert.
+    label : str
+        Label text for the widget.
+
+    Returns
+    -------
+    _Labeled
+        A labeled float text widget.
+    """
     description_tooltip = trait.desc if trait.desc else ""
     widget = _FloatText()
     widget.description_tooltip = description_tooltip
@@ -196,6 +285,20 @@ def float2floattext(trait, label):
 
 
 def str2text(trait, label):
+    """Convert a string trait into a labeled ``_Text`` widget.
+
+    Parameters
+    ----------
+    trait : traits.api.TraitType
+        Trait to convert.
+    label : str
+        Label text for the widget.
+
+    Returns
+    -------
+    _Labeled
+        A labeled text widget.
+    """
     description = trait.desc if trait.desc else ""
     widget = _Text()
     widget.description_tooltip = description
@@ -203,6 +306,28 @@ def str2text(trait, label):
 
 
 def add_display_arg(f):
+    """Decorator that adds a ``display`` keyword argument to a widget function.
+
+    When ``display=True`` (the default):
+
+    * In Jupyter: the root widget is shown via ``IPython.display.display``
+      and ``None`` is returned.
+    * In Marimo: the raw ``{"widget": ..., "wdict": ...}`` dictionary is
+      returned so Marimo can render it with ``mo.ui.anywidget()``.
+
+    When ``display=False``: the dictionary is always returned unchanged.
+
+    Parameters
+    ----------
+    f : callable
+        Widget builder function that returns a dict with ``"widget"`` and
+        ``"wdict"`` keys.
+
+    Returns
+    -------
+    callable
+        Wrapped function with an extra ``display`` keyword argument.
+    """
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
         display = kwargs.pop("display", True)
@@ -217,6 +342,18 @@ def add_display_arg(f):
 
 
 def set_title_container(container, titles):
+    """Set titles on a container widget.
+
+    Tries ``container.set_title(index, title)`` first, and falls back to
+    setting ``container.titles`` as a tuple.
+
+    Parameters
+    ----------
+    container : anywidget.AnyWidget
+        Container widget that supports titles.
+    titles : list of str
+        Titles to assign to each child.
+    """
     try:
         for index, title in enumerate(titles):
             container.set_title(index, title)
