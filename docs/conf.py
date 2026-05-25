@@ -1,4 +1,7 @@
+import warnings
 from datetime import datetime
+
+warnings.filterwarnings("ignore", message=".*Numba is not installed.*")
 
 import hyperspy_gui_anywidget
 
