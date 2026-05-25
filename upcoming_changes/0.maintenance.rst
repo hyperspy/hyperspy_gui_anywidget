@@ -1,0 +1,1 @@
+Improved project maintenance by adding contributor guidance, documentation scaffolding, pre-commit hooks, stronger CI verification, and broader regression coverage for widget helpers and ROI builders.
