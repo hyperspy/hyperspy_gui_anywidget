@@ -1,2 +1,9 @@
 #!/bin/bash
+set -e
+# Install this package without dependency resolution. All runtime deps are
+# already satisfied by requirements.txt above.  --no-deps avoids pulling
+# hyperspy from PyPI (the git fork reports 1.4.2.dev while pyproject.toml
+# asks for >=2.3.0, which would otherwise cause pip to reject the install).
 pip install --no-deps -e .
+# Quick verification that the package is importable
+python -c "import hyperspy_gui_anywidget; print('hyperspy_gui_anywidget', hyperspy_gui_anywidget.__version__, 'OK')"
