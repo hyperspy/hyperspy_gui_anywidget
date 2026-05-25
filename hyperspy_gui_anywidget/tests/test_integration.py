@@ -1,10 +1,10 @@
 import importlib
 from pathlib import Path
 
+import hyperspy.api as hs
 import numpy as np
 import yaml
 
-import hyperspy.api as hs
 from hyperspy_gui_anywidget.tests.utils import KWARGS
 
 
@@ -23,8 +23,7 @@ class TestWidgetRegistry:
             module = importlib.import_module(module_name)
             func = getattr(module, function_name, None)
             assert callable(func), (
-                f"{module_name}.{function_name} is not callable "
-                f"for toolkey '{toolkey}'"
+                f"{module_name}.{function_name} is not callable for toolkey '{toolkey}'"
             )
 
     def test_import_all_modules(self):
@@ -115,9 +114,7 @@ class TestEndToEnd:
 
         # Verify the operation was applied
         s2 = s.deepcopy()
-        s2.smooth_savitzky_golay(
-            polynomial_order=5, window_length=11, differential_order=1
-        )
+        s2.smooth_savitzky_golay(polynomial_order=5, window_length=11, differential_order=1)
 
         # Click apply
         wd["apply_button"].clicks += 1

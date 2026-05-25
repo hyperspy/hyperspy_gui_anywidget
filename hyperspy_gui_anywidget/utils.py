@@ -12,6 +12,7 @@ import sys
 import anywidget
 import IPython.display
 import traitlets
+from ipywidgets import HBox, VBox
 from traits.api import Undefined
 
 
@@ -19,7 +20,7 @@ class _FloatText(anywidget.AnyWidget):
     _esm = """
     function render({ model, el }) {
       const value = model.get("value");
-      el.innerHTML = `<input type="number" step="any" value="${value}" style="width:100%;" />`;
+      el.innerHTML = `<input type="number" step="any" value="${value}" style="width:160px; max-width:160px;" />`;
       const input = el.querySelector("input");
       input.addEventListener("change", () => {
         model.set("value", parseFloat(input.value));
@@ -39,7 +40,13 @@ class _Text(anywidget.AnyWidget):
     _esm = """
     function render({ model, el }) {
       const value = model.get("value");
-      el.innerHTML = `<input type="text" value="${value}" style="width:100%;" />`;
+      const description = model.get("description");
+      let html = "";
+      if (description) {
+        html += `<label>${description}</label>`;
+      }
+      html += `<input type="text" value="${value}" style="width:160px; max-width:160px;" />`;
+      el.innerHTML = html;
       const input = el.querySelector("input");
       input.addEventListener("change", () => {
         model.set("value", input.value);
@@ -52,6 +59,7 @@ class _Text(anywidget.AnyWidget):
     export default { render };
     """
     value = traitlets.Unicode("").tag(sync=True)
+    description = traitlets.Unicode("").tag(sync=True)
     description_tooltip = traitlets.Unicode("").tag(sync=True)
 
 
@@ -65,7 +73,7 @@ class _Dropdown(anywidget.AnyWidget):
       if (desc) {
         html += `<label>${desc}</label>`;
       }
-      html += `<select style="width:100%;">`;
+      html += `<select style="width:160px; max-width:160px;">`;
       for (const opt of options) {
         html += `<option value="${opt}" ${opt === value ? "selected" : ""}>${opt}</option>`;
       }
@@ -97,8 +105,8 @@ class _Labeled(anywidget.AnyWidget):
       const inputType = typeof value === "number" ? "number" : "text";
       el.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; width:100%;">
-          <span style="white-space:nowrap;">${label}</span>
-          <input type="${inputType}" value="${value}" title="${tooltip}" style="flex:1;" />
+          <span style="white-space:nowrap; min-width:120px; text-align:right; margin-right:5px;">${label}</span>
+          <input type="${inputType}" value="${value}" title="${tooltip}" style="flex:0 0 160px; width:160px; max-width:160px;" />
         </div>
       `;
       const input = el.querySelector("input");
@@ -128,9 +136,9 @@ class _LabeledSandwich(anywidget.AnyWidget):
       const inputType = typeof value === "number" ? "number" : "text";
       el.innerHTML = `
         <div style="display:flex; justify-content:space-between; align-items:center; gap:8px; width:100%;">
-          <span style="white-space:nowrap;">${label1}</span>
-          <input type="${inputType}" value="${value}" title="${tooltip}" style="flex:1;" />
-          <span style="white-space:nowrap;">${label2}</span>
+           <span style="white-space:nowrap; min-width:120px; text-align:right; margin-right:5px;">${label1}</span>
+           <input type="${inputType}" value="${value}" title="${tooltip}" style="flex:0 0 160px; width:160px; max-width:160px;" />
+           <span style="white-space:nowrap; min-width:120px; text-align:left; margin-left:5px;">${label2}</span>
         </div>
       `;
       const input = el.querySelector("input");
@@ -226,8 +234,7 @@ def get_label(trait, label):
     str
         Formatted label string.
     """
-    label = (label.replace("_", " ").capitalize()
-             if not trait.label else trait.label)
+    label = label.replace("_", " ").capitalize() if not trait.label else trait.label
     return label
 
 
@@ -251,7 +258,10 @@ def enum2dropdown(trait, description=None, **kwargs):
     """
     values = trait.trait_type.values
     if values is None:
-        return _Text(value="", description=description or "")
+        widget = _Text(value="", description=description or "")
+        if description is not None:
+            widget.description_tooltip = trait.desc if trait.desc else ""
+        return widget
     widget = _Dropdown(
         options=list(values),
         value=values[0] if values else "",
@@ -312,10 +322,12 @@ def add_display_arg(f):
 
     * In Jupyter: the root widget is shown via ``IPython.display.display``
       and ``None`` is returned.
-    * In Marimo: the raw ``{"widget": ..., "wdict": ...}`` dictionary is
-      returned so Marimo can render it with ``mo.ui.anywidget()``.
+    * In Marimo: the widget is displayed via ``IPython.display.display``. If the
+      root widget is a ``VBox``/``HBox``, it is flattened to a ``FlatContainer``
+      first so Marimo can render it correctly.
 
-    When ``display=False``: the dictionary is always returned unchanged.
+    When ``display=False``: the raw ``{"widget": ..., "wdict": ...}`` dictionary
+    is always returned unchanged.
 
     Parameters
     ----------
@@ -328,16 +340,26 @@ def add_display_arg(f):
     callable
         Wrapped function with an extra ``display`` keyword argument.
     """
+
     @functools.wraps(f)
     def wrapper(*args, **kwargs):
         display = kwargs.pop("display", True)
         wdict = f(*args, **kwargs)
         if display:
             if "marimo" in sys.modules:
-                return wdict
-            IPython.display.display(wdict["widget"])
+                widget = wdict["widget"]
+                if isinstance(widget, (VBox, HBox)):
+                    from hyperspy_gui_anywidget.custom_widgets import _make_flat_container
+
+                    widget = _make_flat_container(
+                        widget.children, "column" if isinstance(widget, VBox) else "row"
+                    )
+                IPython.display.display(widget)
+            else:
+                IPython.display.display(wdict["widget"])
         else:
             return wdict
+
     return wrapper
 
 

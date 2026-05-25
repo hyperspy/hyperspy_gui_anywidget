@@ -9,6 +9,7 @@ from hyperspy_gui_anywidget.tests.utils import KWARGS
 module_list = [hs]
 try:
     import exspy
+
     module_list.append(exspy)
 except Exception:
     pass
@@ -51,7 +52,7 @@ def test_preferences_widget(module):
                     set_ok = getattr(tab_obj, key) == value_widget.value
                 except (ValueError, TypeError, TraitError):
                     pass
-            elif hasattr(trait_value, '__iter__') and not isinstance(trait_value, str):
+            elif hasattr(trait_value, "__iter__") and not isinstance(trait_value, str):
                 continue
 
             if not isinstance(trait_value, bool) and set_ok:

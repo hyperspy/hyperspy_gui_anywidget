@@ -21,7 +21,6 @@ import importlib
 from importlib.metadata import version
 from pathlib import Path
 
-
 __version__ = version("hyperspy_gui_anywidget")
 
 # For development version, `setuptools_scm` will be used at build time
@@ -48,14 +47,14 @@ if (_root / ".git").exists() and not (_root / ".git/shallow").exists():
 
 
 __all__ = [
-    'axes',
-    'microscope_parameters',
-    'model',
-    'preferences',
-    'roi',
-    'tools',
-    '__version__',
-    ]
+    "axes",
+    "microscope_parameters",
+    "model",
+    "preferences",
+    "roi",
+    "tools",
+    "__version__",
+]
 
 
 def __dir__():
@@ -67,7 +66,5 @@ def __getattr__(name):
     # in the module
     # See https://peps.python.org/pep-0562/
     if name in __all__:
-        return importlib.import_module(
-            "." + name, 'hyperspy_gui_anywidget'
-            )
+        return importlib.import_module("." + name, "hyperspy_gui_anywidget")
     raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

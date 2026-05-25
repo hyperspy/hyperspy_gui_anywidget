@@ -55,7 +55,7 @@ def test_add_display_arg_displays_widget_in_jupyter():
                 sys.modules["marimo"] = orig_marimo
 
 
-def test_add_display_arg_does_not_display_in_marimo():
+def test_add_display_arg_displays_in_marimo():
     expected_widget = MagicMock()
 
     @utils.add_display_arg
@@ -66,8 +66,8 @@ def test_add_display_arg_does_not_display_in_marimo():
     with patch("IPython.display.display") as mock_display:
         with patch.dict(sys.modules, {"marimo": fake_marimo}):
             result = dummy(display=True)
-            mock_display.assert_not_called()
-            assert result == {"widget": expected_widget, "wdict": {"a": 1}}
+            mock_display.assert_called_once_with(expected_widget)
+            assert result is None
 
 
 def test_labelme_creates_labeled_widget():
@@ -119,6 +119,14 @@ def test_enum2dropdown_with_description():
     dd = utils.enum2dropdown(trait, description="Choose")
     assert dd.description == "Choose"
     assert dd.description_tooltip == "tooltip text"
+
+
+def test_enum2dropdown_falls_back_to_text_widget():
+    trait = _MockTrait(values=None, desc="free form")
+    widget = utils.enum2dropdown(trait, description="Custom")
+    assert widget.description == "Custom"
+    assert widget.description_tooltip == "free form"
+    assert widget.value == ""
 
 
 def test_float2floattext_creates_widget():

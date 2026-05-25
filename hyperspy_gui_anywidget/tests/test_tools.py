@@ -1,11 +1,10 @@
+import hyperspy.api as hs
 import numpy as np
 import pytest
-
-import hyperspy.api as hs
 from hyperspy.signal_tools import (
+    ImageContrastEditor,
     Signal1DCalibration,
     Signal2DCalibration,
-    ImageContrastEditor,
 )
 from hyperspy.utils.baseline_removal_tool import BaselineRemoval
 
@@ -13,10 +12,9 @@ from hyperspy_gui_anywidget.tests.utils import KWARGS
 
 
 class TestTools:
-
     def setup_method(self, method):
-        self.s = hs.signals.Signal1D(1 + np.arange(100)**2)
-        self.s.change_dtype('float')
+        self.s = hs.signals.Signal1D(1 + np.arange(100) ** 2)
+        self.s.change_dtype("float")
         self.s.axes_manager[0].offset = 10
         self.s.axes_manager[0].scale = 2
         self.s.axes_manager[0].units = "m"
@@ -60,15 +58,26 @@ class TestTools:
         s = self.s
         s.add_gaussian_noise(0.1)
         s2 = s.deepcopy()
-        wd = s.smooth_savitzky_golay(**KWARGS)["anywidget"]["wdict"]
+        result = s.smooth_savitzky_golay(**KWARGS)["anywidget"]
+        wd = result["wdict"]
         wd["window_length"].value = 11
         wd["polynomial_order"].value = 5
         wd["differential_order"].value = 1
         wd["color"].value = "red"
         wd["apply_button"].clicks += 1
-        s2.smooth_savitzky_golay(polynomial_order=5, window_length=11,
-                                 differential_order=1)
+        s2.smooth_savitzky_golay(polynomial_order=5, window_length=11, differential_order=1)
         np.testing.assert_allclose(s.data, s2.data)
+        assert wd["color"] in result["widget"].children
+
+    def test_smooth_sg_color_widget_and_slider_width(self):
+        result = self.s.smooth_savitzky_golay(**KWARGS)["anywidget"]
+        wd = result["wdict"]
+
+        assert wd["window_length"].slider_width == "220px"
+        assert wd["polynomial_order"].slider_width == "220px"
+        assert wd["differential_order"].slider_width == "220px"
+        assert wd["color"] in result["widget"].children
+        assert "picker-input" in wd["color"]._esm
 
     def test_smooth_lowess(self):
         s = self.s
@@ -97,11 +106,12 @@ class TestTools:
         s = self.s
         s.add_gaussian_noise(0.1)
         s2 = s.remove_background(
-            signal_range=(15., 50.),
-            background_type='Polynomial',
+            signal_range=(15.0, 50.0),
+            background_type="Polynomial",
             polynomial_order=2,
             fast=False,
-            zero_fill=True)
+            zero_fill=True,
+        )
         wd = s.remove_background(**KWARGS)["anywidget"]["wdict"]
         assert wd["polynomial_order"].disabled is True
         wd["background_type"].value = "Polynomial"
@@ -109,10 +119,10 @@ class TestTools:
         wd["polynomial_order"].value = 2
         wd["fast"].value = False
         wd["zero_fill"].value = True
-        wd["left"].value = 15.
-        wd["right"].value = 50.
+        wd["left"].value = 15.0
+        wd["right"].value = 50.0
         wd["apply_button"].clicks += 1
-        np.testing.assert_allclose(s.data[2:], s2.data[2:], atol=1E-5)
+        np.testing.assert_allclose(s.data[2:], s2.data[2:], atol=1e-5)
         np.testing.assert_allclose(np.zeros(2), s2.data[:2])
 
     def test_constrast_editor(self):
@@ -127,25 +137,25 @@ class TestTools:
         assert wd["gamma"].value == 1.0
         wd["bins"].value = 50
         assert ceditor.bins == 50
-        wd["norm"].value = 'Log'
-        assert ceditor.norm == 'Log'
-        wd["norm"].value = 'Symlog'
-        assert ceditor.norm == 'Symlog'
+        wd["norm"].value = "Log"
+        assert ceditor.norm == "Log"
+        wd["norm"].value = "Symlog"
+        assert ceditor.norm == "Symlog"
         assert wd["linthresh"].value == 0.01
         assert wd["linscale"].value == 0.1
         wd["linthresh"].value = 0.1
         assert ceditor.linthresh == 0.1
         wd["linscale"].value = 0.2
         assert ceditor.linscale == 0.2
-        wd["norm"].value = 'Linear'
+        wd["norm"].value = "Linear"
         percentile = [1.0, 99.0]
         wd["percentile"].value = percentile
         assert ceditor.vmin_percentile == percentile[0]
         assert ceditor.vmax_percentile == percentile[1]
-        assert im._plot.signal_plot.vmin == f'{percentile[0]}th'
-        assert im._plot.signal_plot.vmax == f'{percentile[1]}th'
-        wd["norm"].value = 'Power'
-        assert ceditor.norm == 'Power'
+        assert im._plot.signal_plot.vmin == f"{percentile[0]}th"
+        assert im._plot.signal_plot.vmax == f"{percentile[1]}th"
+        wd["norm"].value = "Power"
+        assert ceditor.norm == "Power"
         assert wd["gamma"].value == 1.0
         wd["gamma"].value = 0.1
         assert ceditor.gamma == 0.1
@@ -158,8 +168,8 @@ class TestTools:
         assert ceditor.ss_right_value == 0.5
         wd["apply_button"].clicks += 1
         wd["reset_button"].clicks += 1
-        assert im._plot.signal_plot.vmin == '0.0th'
-        assert im._plot.signal_plot.vmax == '100.0th'
+        assert im._plot.signal_plot.vmin == "0.0th"
+        assert im._plot.signal_plot.vmax == "100.0th"
 
     def test_eels_table_tool(self):
         exspy = pytest.importorskip("exspy")
@@ -175,19 +185,19 @@ class TestTools:
         er.ss_right_value = 550
         wd = er.gui(**KWARGS)["anywidget"]["wdict"]
         wd["update"].clicks += 1
-        assert wd["units"].value == 'eV'
+        assert wd["units"].value == "eV"
         assert wd["left"].value == 500
         assert wd["right"].value == 550
-        assert len(wd['gb'].children) == 44
-        wd['major'].value = True
+        assert len(wd["gb"].children) == 44
+        wd["major"].value = True
         wd["update"].clicks += 1
-        assert len(wd['gb'].children) == 24
-        assert wd['gb'].children[4].description == 'Sb_M4'
-        wd['order'].value = 'ascending'
+        assert len(wd["gb"].children) == 24
+        assert wd["gb"].children[4].description == "Sb_M4"
+        wd["order"].value = "ascending"
         wd["update"].clicks += 1
-        assert wd['gb'].children[4].description == 'V_L3'
+        assert wd["gb"].children[4].description == "V_L3"
         wd["reset"].clicks += 1
-        assert len(wd['gb'].children) == 4
+        assert len(wd["gb"].children) == 4
 
 
 def test_calibration_2d():
@@ -261,3 +271,23 @@ def test_remove_baseline():
     assert wd["lam"].value == 1e7
     br.apply()
     assert s.isig[:10].data.mean() < 5
+
+
+def test_calibrate_left_right_are_read_only():
+    s = hs.signals.Signal1D(1 + np.arange(100) ** 2)
+    s.change_dtype("float")
+    cal = Signal1DCalibration(s)
+    wd = cal.gui(**KWARGS)["anywidget"]["wdict"]
+    assert wd["left"].disabled is True
+    assert wd["right"].disabled is True
+    assert wd["new_left"].disabled is False
+    assert wd["new_right"].disabled is False
+
+
+def test_remove_background_polynomial_order_visibility_flag():
+    s = hs.signals.Signal1D(1 + np.arange(100) ** 2)
+    s.change_dtype("float")
+    wd = s.remove_background(**KWARGS)["anywidget"]["wdict"]
+    assert wd["polynomial_order"].visible is False
+    wd["background_type"].value = "Polynomial"
+    assert wd["polynomial_order"].visible is True

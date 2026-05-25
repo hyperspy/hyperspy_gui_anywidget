@@ -1,15 +1,13 @@
-from numpy.random import random
-import pytest
-
 import hyperspy.api as hs
-from hyperspy_gui_anywidget.tests.utils import KWARGS
+import pytest
+from numpy.random import random
 
+from hyperspy_gui_anywidget.tests.utils import KWARGS
 
 exspy = pytest.importorskip("exspy")
 
 
 class TestSetMicroscopeParameters:
-
     def setup_method(self, method):
         self.s = hs.signals.Signal1D((2, 3, 4))
 

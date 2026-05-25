@@ -1,21 +1,33 @@
 """Interactive tool widgets for HyperSpy signals using anywidget."""
 
 import traits.api as t
-
-from link_traits import link
 from hyperspy.signal_tools import (
-    SPIKES_REMOVAL_INSTRUCTIONS,
     IMAGE_CONTRAST_EDITOR_HELP_IPYWIDGETS,
+    SPIKES_REMOVAL_INSTRUCTIONS,
 )
+from link_traits import link
 
-from hyperspy_gui_anywidget.utils import (
-    labelme, enum2dropdown, add_display_arg, set_title_container, _Dropdown
-)
 from hyperspy_gui_anywidget.custom_widgets import (
-    FloatTextWidget, TextWidget, IntTextWidget, IntSliderWidget,
-    FloatSliderWidget, CheckboxWidget, LabelWidget,
-    ContainerWidget, ButtonWidget, HTMLWidget, IntProgressWidget,
-    ToggleButtonWidget, FloatRangeSliderWidget, OddIntSliderWidget,
+    ButtonWidget,
+    CheckboxWidget,
+    ContainerWidget,
+    FloatRangeSliderWidget,
+    FloatSliderWidget,
+    FloatTextWidget,
+    HTMLWidget,
+    IntProgressWidget,
+    IntSliderWidget,
+    IntTextWidget,
+    LabelWidget,
+    OddIntSliderWidget,
+    TextWidget,
+    ToggleButtonWidget,
+)
+from hyperspy_gui_anywidget.utils import (
+    _Dropdown,
+    add_display_arg,
+    enum2dropdown,
+    labelme,
 )
 
 
@@ -47,8 +59,7 @@ def interactive_range_aw(obj, **kwargs):
             "range. Press `Apply` to perform the operation or `Close` to cancel."
         )
     )
-    help = ContainerWidget(children=[help_text], layout="vertical")
-    set_title_container(help, ["Help"])
+    help = ContainerWidget(children=[help_text], layout="accordion", titles=["Help"])
     close = ButtonWidget(
         description="Close",
         tooltip="Close widget and remove span selector from the signal figure.",
@@ -84,7 +95,9 @@ def interactive_range_aw(obj, **kwargs):
 
     box = ContainerWidget(
         children=[
-            ContainerWidget(children=[left, units, LabelWidget(value="-"), right, units], layout="horizontal"),
+            ContainerWidget(
+                children=[left, units, LabelWidget(value="-"), right, units], layout="horizontal"
+            ),
             help,
             ContainerWidget(children=[apply, close], layout="horizontal"),
         ],
@@ -129,8 +142,7 @@ def calibrate2d_aw(obj, **kwargs):
         )
     )
     wdict["help_text"] = help_text
-    help = ContainerWidget(children=[help_text], layout="vertical")
-    set_title_container(help, ["Help"])
+    help = ContainerWidget(children=[help_text], layout="accordion", titles=["Help"])
     close = ButtonWidget(
         description="Close",
         tooltip="Close widget and remove line from the signal figure.",
@@ -217,8 +229,7 @@ def calibrate_aw(obj, **kwargs):
         )
     )
     wdict["help_text"] = help_text
-    help = ContainerWidget(children=[help_text], layout="vertical")
-    set_title_container(help, ["Help"])
+    help = ContainerWidget(children=[help_text], layout="accordion", titles=["Help"])
     close = ButtonWidget(
         description="Close",
         tooltip="Close widget and remove span selector from the signal figure.",
@@ -259,8 +270,8 @@ def calibrate_aw(obj, **kwargs):
             ContainerWidget(children=[left, unitsl], layout="horizontal"),
             ContainerWidget(children=[right, unitsl], layout="horizontal"),
             ContainerWidget(children=[offset, unitsl], layout="horizontal"),
-            scale,
-            units,
+            ContainerWidget(children=[scale], layout="horizontal"),
+            ContainerWidget(children=[units], layout="horizontal"),
             help,
             ContainerWidget(children=[apply, close], layout="horizontal"),
         ],
@@ -319,16 +330,19 @@ def print_edges_table_aw(obj, **kwargs):
             "on the signal."
         )
     )
-    help = ContainerWidget(children=[help_text], layout="vertical")
-    set_title_container(help, ["Help"])
+    help = ContainerWidget(children=[help_text], layout="accordion", titles=["Help"])
     close = ButtonWidget(description="Close", tooltip="Close the widget.")
     reset = ButtonWidget(description="Reset", tooltip="Reset the span selector.")
 
-    header = ('<p style="padding-left: 1em; padding-right: 1em; '
-              'text-align: center; vertical-align: top; '
-              'font-weight:bold">{}</p>')
-    entry = ('<p style="padding-left: 1em; padding-right: 1em; '
-             'text-align: center; vertical-align: top">{}</p>')
+    header = (
+        '<p style="padding-left: 1em; padding-right: 1em; '
+        "text-align: center; vertical-align: top; "
+        'font-weight:bold">{}</p>'
+    )
+    entry = (
+        '<p style="padding-left: 1em; padding-right: 1em; '
+        'text-align: center; vertical-align: top">{}</p>'
+    )
 
     wdict["left"] = left
     wdict["right"] = right
@@ -451,15 +465,32 @@ def smooth_savitzky_golay_aw(obj, **kwargs):
     """
     wdict = {}
     window_length = OddIntSliderWidget(
-        value=3, step=2, min=3, max=max(int(obj.axis.size * 0.25), 3), description="Window length"
+        value=3,
+        step=2,
+        min=3,
+        max=max(int(obj.axis.size * 0.25), 3),
+        description="Window length",
+        slider_width="220px",
     )
-    polynomial_order = IntSliderWidget(value=3, min=1, max=window_length.value - 1, description="Polynomial order")
+    polynomial_order = IntSliderWidget(
+        value=3,
+        min=1,
+        max=window_length.value - 1,
+        description="Polynomial order",
+        slider_width="220px",
+    )
 
     def update_bound(change):
         polynomial_order.max = change.new - 1
 
     window_length.observe(update_bound, names="value")
-    differential_order = IntSliderWidget(value=0, min=0, max=10, description="Differential order")
+    differential_order = IntSliderWidget(
+        value=0,
+        min=0,
+        max=10,
+        description="Differential order",
+        slider_width="220px",
+    )
     color = TextWidget(description="Color")
     close = ButtonWidget(
         description="Close",
@@ -481,10 +512,10 @@ def smooth_savitzky_golay_aw(obj, **kwargs):
 
     box = ContainerWidget(
         children=[
-            labelme("Window length", window_length),
-            labelme("polynomial order", polynomial_order),
-            labelme("Differential order", differential_order),
-            labelme("Color", color),
+            window_length,
+            polynomial_order,
+            differential_order,
+            color,
             ContainerWidget(children=[apply, close], layout="horizontal"),
         ],
         layout="vertical",
@@ -548,9 +579,9 @@ def smooth_lowess_aw(obj, **kwargs):
 
     box = ContainerWidget(
         children=[
-            labelme("Smoothing parameter", smoothing_parameter),
+            smoothing_parameter,
             labelme("Number of iterations", number_of_iterations),
-            labelme("Color", color),
+            color,
             ContainerWidget(children=[apply, close], layout="horizontal"),
         ],
         layout="vertical",
@@ -596,7 +627,9 @@ def smooth_tv_aw(obj, **kwargs):
     """
     wdict = {}
     smoothing_parameter = FloatSliderWidget(min=0.1, max=1000, description="Weight")
-    smoothing_parameter_max = FloatTextWidget(value=smoothing_parameter.max, description="Weight max")
+    smoothing_parameter_max = FloatTextWidget(
+        value=smoothing_parameter.max, description="Weight max"
+    )
     color = TextWidget(description="Color")
     close = ButtonWidget(
         description="Close",
@@ -617,9 +650,9 @@ def smooth_tv_aw(obj, **kwargs):
 
     box = ContainerWidget(
         children=[
-            labelme("Weight", smoothing_parameter),
+            smoothing_parameter,
             labelme("Weight max", smoothing_parameter_max),
-            labelme("Color", color),
+            color,
             ContainerWidget(children=[apply, close], layout="horizontal"),
         ],
         layout="vertical",
@@ -661,7 +694,7 @@ def remove_background_aw(obj, **kwargs):
     wdict = {}
     left = FloatTextWidget(disabled=True, description="Left")
     right = FloatTextWidget(disabled=True, description="Right")
-    red_chisq = FloatTextWidget(disabled=True, description="red-chi2")
+    red_chisq = FloatTextWidget(disabled=True, description="red-χ²")
     link((obj, "ss_left_value"), (left, "value"))
     link((obj, "ss_right_value"), (right, "value"))
     link((obj, "red_chisq"), (red_chisq, "value"))
@@ -681,8 +714,7 @@ def remove_background_aw(obj, **kwargs):
         )
     )
     wdict["help_text"] = help_text
-    help = ContainerWidget(children=[help_text], layout="vertical")
-    set_title_container(help, ["Help"])
+    help = ContainerWidget(children=[help_text], layout="accordion", titles=["Help"])
     close = ButtonWidget(
         description="Close",
         tooltip="Close widget and remove span selector from the signal figure.",
@@ -697,10 +729,9 @@ def remove_background_aw(obj, **kwargs):
     background_type.description = "Background type"
 
     def enable_poly_order(change):
-        if change.new == "Polynomial":
-            polynomial_order.disabled = False
-        else:
-            polynomial_order.disabled = True
+        is_polynomial = change.new == "Polynomial"
+        polynomial_order.disabled = not is_polynomial
+        polynomial_order.visible = is_polynomial
 
     background_type.observe(enable_poly_order, names="value")
     link((obj, "background_type"), (background_type, "value"))
@@ -723,7 +754,9 @@ def remove_background_aw(obj, **kwargs):
 
     box = ContainerWidget(
         children=[
-            left, right, red_chisq,
+            left,
+            right,
+            red_chisq,
             background_type,
             polynomial_order,
             fast,
@@ -779,15 +812,20 @@ def image_constast_editor_aw(obj, **kwargs):
         value=[0.0, 100.0], min=0.0, max=100.0, step=0.1, description="Vmin/vmax percentile"
     )
     gamma = FloatSliderWidget(value=1.0, min=0.1, max=3.0, description="Gamma")
-    linthresh = FloatSliderWidget(value=0.01, min=0.001, max=1.0, step=0.001, description="Linear threshold")
-    linscale = FloatSliderWidget(value=0.1, min=0.001, max=10.0, step=0.001, description="Linear scale")
+    linthresh = FloatSliderWidget(
+        value=0.01, min=0.001, max=1.0, step=0.001, description="Linear threshold"
+    )
+    linscale = FloatSliderWidget(
+        value=0.1, min=0.001, max=10.0, step=0.001, description="Linear scale"
+    )
     auto = CheckboxWidget(value=True, description="Auto")
     help_text = HTMLWidget(value=IMAGE_CONTRAST_EDITOR_HELP_IPYWIDGETS)
     wdict["help_text"] = help_text
-    help = ContainerWidget(children=[help_text], layout="vertical")
-    set_title_container(help, ["Help"])
+    help = ContainerWidget(children=[help_text], layout="accordion", titles=["Help"])
     close = ButtonWidget(description="Close", tooltip="Close widget.")
-    apply = ButtonWidget(description="Apply", tooltip="Use the selected range to re-calculate the histogram.")
+    apply = ButtonWidget(
+        description="Apply", tooltip="Use the selected range to re-calculate the histogram."
+    )
     reset = ButtonWidget(description="Reset", tooltip="Reset the settings to their initial values.")
     wdict["left"] = left
     wdict["right"] = right
@@ -888,9 +926,8 @@ def spikes_removal_aw(obj, **kwargs):
     default_spike_width = IntTextWidget(description="Default spike width")
     spline_order = IntSliderWidget(min=1, max=10, description="Spline order")
     progress_bar = IntProgressWidget(max=len(obj.coordinates) - 1, description="Progress")
-    help_text = HTMLWidget(value=SPIKES_REMOVAL_INSTRUCTIONS.replace('\n', '<br/>'))
-    help = ContainerWidget(children=[help_text], layout="vertical")
-    set_title_container(help, ["Help"])
+    help_text = HTMLWidget(value=SPIKES_REMOVAL_INSTRUCTIONS.replace("\n", "<br/>"))
+    help = ContainerWidget(children=[help_text], layout="accordion", titles=["Help"])
 
     show_diff = ButtonWidget(
         description="Show derivative histogram",
@@ -944,11 +981,11 @@ def spikes_removal_aw(obj, **kwargs):
         children=[
             labelme("Add noise", add_noise),
             labelme("Default spike width", default_spike_width),
-            labelme("Spline order", spline_order),
+            spline_order,
         ],
-        layout="vertical",
+        layout="accordion",
+        titles=["Advanced settings"],
     )
-    set_title_container(advanced, ["Advanced settings"])
 
     box = ContainerWidget(
         children=[
@@ -1083,9 +1120,9 @@ def remove_baseline_aw(obj, **kwargs):
 
     method_parameters = ContainerWidget(
         children=[value for value in parameters_widget_dict.values()],
-        layout="vertical",
+        layout="accordion",
+        titles=["Method parameters"],
     )
-    set_title_container(method_parameters, ["Method parameters"])
 
     wdict["algorithm"] = algorithm
     wdict["_time_per_pixel"] = _time_per_pixel
@@ -1153,7 +1190,7 @@ def smooth_butterworth_aw(obj, **kwargs):
         ``display=False``, otherwise ``None`` (widget displayed inline).
     """
     wdict = {}
-    cutoff = FloatSliderWidget(min=0.01, max=1., description="Cutoff")
+    cutoff = FloatSliderWidget(min=0.01, max=1.0, description="Cutoff")
     order = IntTextWidget(description="Order")
     type_ = _Dropdown(options=["low", "high"], value="low", description="Type")
     color = TextWidget(description="Color")
@@ -1168,6 +1205,7 @@ def smooth_butterworth_aw(obj, **kwargs):
     link((obj, "cutoff_frequency_ratio"), (cutoff, "value"))
     link((obj, "type"), (type_, "value"))
     link((obj, "order"), (order, "value"))
+    link((obj, "line_color_ipy"), (color, "value"))
     wdict["cutoff"] = cutoff
     wdict["order"] = order
     wdict["type"] = type_
@@ -1177,9 +1215,10 @@ def smooth_butterworth_aw(obj, **kwargs):
 
     box = ContainerWidget(
         children=[
-            labelme("Cutoff frequency ration", cutoff),
+            cutoff,
             labelme("Type", type_),
             labelme("Order", order),
+            color,
             ContainerWidget(children=[apply, close], layout="horizontal"),
         ],
         layout="vertical",
@@ -1225,12 +1264,18 @@ def find_peaks2D_aw(obj, **kwargs):
     max_distance = IntSliderWidget(min=1, max=20, value=10, description="Distance")
     minmax_distance = FloatSliderWidget(min=0, max=6, value=3, description="Distance")
     minmax_threshold = FloatSliderWidget(min=0, max=20, value=10, description="Threshold")
-    zaefferer_grad_threshold = FloatSliderWidget(min=0, max=0.2, value=0.1, step=0.2 * 1E-1, description="Gradient threshold")
+    zaefferer_grad_threshold = FloatSliderWidget(
+        min=0, max=0.2, value=0.1, step=0.2 * 1e-1, description="Gradient threshold"
+    )
     zaefferer_window_size = IntSliderWidget(min=2, max=80, value=40, description="Window size")
-    zaefferer_distance_cutoff = FloatSliderWidget(min=0, max=100, value=50, description="Distance cutoff")
+    zaefferer_distance_cutoff = FloatSliderWidget(
+        min=0, max=100, value=50, description="Distance cutoff"
+    )
     stat_alpha = FloatSliderWidget(min=0, max=2, value=1, description="Alpha")
     stat_window_radius = IntSliderWidget(min=5, max=20, value=10, description="Radius")
-    stat_convergence_ratio = FloatSliderWidget(min=0, max=0.1, value=0.05, description="Convergence ratio")
+    stat_convergence_ratio = FloatSliderWidget(
+        min=0, max=0.1, value=0.05, description="Convergence ratio"
+    )
     log_min_sigma = FloatSliderWidget(min=0, max=2, value=1, description="Min sigma")
     log_max_sigma = FloatSliderWidget(min=0, max=100, value=50, description="Max sigma")
     log_num_sigma = FloatSliderWidget(min=0, max=20, value=10, description="Num sigma")
@@ -1242,8 +1287,8 @@ def find_peaks2D_aw(obj, **kwargs):
     dog_sigma_ratio = FloatSliderWidget(min=0, max=3.2, value=1.6, description="Sigma ratio")
     dog_threshold = FloatSliderWidget(min=0, max=0.4, value=0.2, description="Threshold")
     dog_overlap = FloatSliderWidget(min=0, max=1, value=0.5, description="Overlap")
-    xc_distance = FloatSliderWidget(min=0, max=10., value=5., description="Distance")
-    xc_threshold = FloatSliderWidget(min=0, max=2., value=0.5, description="Threshold")
+    xc_distance = FloatSliderWidget(min=0, max=10.0, value=5.0, description="Distance")
+    xc_threshold = FloatSliderWidget(min=0, max=2.0, value=0.5, description="Threshold")
 
     wdict["local_max_distance"] = local_max_distance
     wdict["local_max_threshold"] = local_max_threshold
@@ -1310,56 +1355,56 @@ def find_peaks2D_aw(obj, **kwargs):
     )
 
     box_local_max = ContainerWidget(
-        children=[labelme("Distance", local_max_distance), labelme("Threshold", local_max_threshold)],
+        children=[local_max_distance, local_max_threshold],
         layout="vertical",
     )
     box_max = ContainerWidget(
-        children=[labelme("Alpha", max_alpha), labelme("Distance", max_distance)],
+        children=[max_alpha, max_distance],
         layout="vertical",
     )
     box_minmax = ContainerWidget(
-        children=[labelme("Distance", minmax_distance), labelme("Threshold", minmax_threshold)],
+        children=[minmax_distance, minmax_threshold],
         layout="vertical",
     )
     box_zaefferer = ContainerWidget(
         children=[
-            labelme("Gradient threshold", zaefferer_grad_threshold),
-            labelme("Window size", zaefferer_window_size),
-            labelme("Distance cutoff", zaefferer_distance_cutoff),
+            zaefferer_grad_threshold,
+            zaefferer_window_size,
+            zaefferer_distance_cutoff,
         ],
         layout="vertical",
     )
     box_stat = ContainerWidget(
         children=[
-            labelme("Alpha", stat_alpha),
-            labelme("Radius", stat_window_radius),
-            labelme("Convergence ratio", stat_convergence_ratio),
+            stat_alpha,
+            stat_window_radius,
+            stat_convergence_ratio,
         ],
         layout="vertical",
     )
     box_log = ContainerWidget(
         children=[
-            labelme("Min sigma", log_min_sigma),
-            labelme("Max sigma", log_max_sigma),
-            labelme("Num sigma", log_num_sigma),
-            labelme("Threshold", log_threshold),
-            labelme("Overlap", log_overlap),
+            log_min_sigma,
+            log_max_sigma,
+            log_num_sigma,
+            log_threshold,
+            log_overlap,
             labelme("Log scale", log_log_scale),
         ],
         layout="vertical",
     )
     box_dog = ContainerWidget(
         children=[
-            labelme("Min sigma", dog_min_sigma),
-            labelme("Max sigma", dog_max_sigma),
-            labelme("Sigma ratio", dog_sigma_ratio),
-            labelme("Threshold", dog_threshold),
-            labelme("Overlap", dog_overlap),
+            dog_min_sigma,
+            dog_max_sigma,
+            dog_sigma_ratio,
+            dog_threshold,
+            dog_overlap,
         ],
         layout="vertical",
     )
     box_xc = ContainerWidget(
-        children=[labelme("Distance", xc_distance), labelme("Threshold", xc_threshold)],
+        children=[xc_distance, xc_threshold],
         layout="vertical",
     )
 
@@ -1374,9 +1419,9 @@ def find_peaks2D_aw(obj, **kwargs):
             box_dog,
             box_xc,
         ],
-        layout="vertical",
+        layout="accordion",
+        titles=["Method parameters"],
     )
-    set_title_container(method_parameters, ["Method parameters"])
 
     widgets_list = [
         labelme("Method", method),

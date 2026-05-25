@@ -4,15 +4,20 @@
 import anywidget
 import traitlets
 import traits.trait_types
-
 from link_traits import link
+
+from hyperspy_gui_anywidget.custom_widgets import CheckboxWidget
 from hyperspy_gui_anywidget.utils import (
-    add_display_arg, float2floattext, get_label, str2text,
-    enum2dropdown, _Labeled
+    _Labeled,
+    add_display_arg,
+    enum2dropdown,
+    float2floattext,
+    get_label,
+    str2text,
 )
 
 
-class _Checkbox(anywidget.AnyWidget):
+class _Checkbox(CheckboxWidget):
     _esm = """
     function render({ model, el }) {
       const value = model.get("value");
@@ -132,12 +137,7 @@ def range2floatrangeslider(trait, label):
         A range slider widget.
     """
     range_trait = trait.trait_type
-    widget = _RangeSlider(
-        min=range_trait._low,
-        max=range_trait._high,
-        value=0.0,
-        description=label
-    )
+    widget = _RangeSlider(min=range_trait._low, max=range_trait._high, value=0.0, description=label)
     return widget
 
 
@@ -175,58 +175,6 @@ def _get_widget_for_trait(trait, label):
     return widget_func(trait, label)
 
 
-class _PreferencesTabs(anywidget.AnyWidget):
-    _esm = """
-    function render({ model, el }) {
-      const tabs = model.get("tabs");
-      const titles = model.get("titles");
-
-      el.innerHTML = `
-        <div style="display:flex; flex-direction:column; width:100%;">
-          <div class="tab-headers" style="display:flex; border-bottom:1px solid #ccc;"></div>
-          <div class="tab-content" style="padding:10px 0;"></div>
-        </div>
-      `;
-
-      const headersEl = el.querySelector(".tab-headers");
-      const contentEl = el.querySelector(".tab-content");
-
-      let activeTab = 0;
-
-      function renderTabs() {
-        headersEl.innerHTML = "";
-        contentEl.innerHTML = "";
-        tabs.forEach((tab, i) => {
-          const btn = document.createElement("button");
-          btn.textContent = titles[i];
-          btn.style.padding = "8px 16px";
-          btn.style.border = "none";
-          btn.style.background = i === activeTab ? "#e0e0e0" : "transparent";
-          btn.style.cursor = "pointer";
-          btn.style.borderBottom = i === activeTab ? "2px solid #3366cc" : "none";
-          btn.addEventListener("click", () => {
-            activeTab = i;
-            renderTabs();
-          });
-          headersEl.appendChild(btn);
-
-          if (i === activeTab && model.widget_manager) {
-            model.widget_manager.create_view(tab).then(view => {
-              contentEl.innerHTML = "";
-              contentEl.appendChild(view.el);
-            });
-          }
-        });
-      }
-
-      renderTabs();
-    }
-    export default { render };
-    """
-    tabs = traitlets.List().tag(sync=True)
-    titles = traitlets.List(trait=traitlets.Unicode()).tag(sync=True)
-
-
 class _SaveButton(anywidget.AnyWidget):
     _esm = """
     function render({ model, el }) {
@@ -235,13 +183,14 @@ class _SaveButton(anywidget.AnyWidget):
         <button style="padding:6px 16px; cursor:pointer;">${text}</button>
       `;
       el.querySelector("button").addEventListener("click", () => {
-        model.get("on_save")();
+        model.set("clicks", model.get("clicks") + 1);
+        model.save_changes();
       });
     }
     export default { render };
     """
     text = traitlets.Unicode("Save").tag(sync=True)
-    on_save = traitlets.Callable().tag(sync=True)
+    clicks = traitlets.Int(0).tag(sync=True)
 
 
 @add_display_arg
@@ -303,51 +252,48 @@ def _build_preferences_widget(obj, titles):
 
         ipytabs[tab] = ipytab
 
-    tabs_widget = _PreferencesTabs(
-        tabs=[ipytabs[title] for title in titles],
-        titles=titles
-    )
-
-    def on_save_click():
-        obj.save()
-
-    save_button = _SaveButton(on_save=on_save_click)
+    save_button = _SaveButton()
+    save_button.observe(lambda _: obj.save(), names="clicks")
     wdict["save_button"] = save_button
 
-    container = _PreferencesContainer(
-        tabs_widget=tabs_widget,
-        save_button=save_button
-    )
+    import sys
+
+    if "marimo" in sys.modules:
+        from hyperspy_gui_anywidget.custom_widgets import (
+            FlatContainer,
+            _widget_config,
+            _wire_flat_sync,
+        )
+
+        configs = []
+        all_kids = []
+
+        for title in titles:
+            configs.append({"type": "tab_start", "title": str(title)})
+            configs.append({"type": "layout_start", "direction": "column"})
+            for widget in ipytabs[title]:
+                configs.append(_widget_config(widget))
+            configs.append({"type": "layout_end"})
+            all_kids.extend(ipytabs[title])
+            configs.append({"type": "tab_end"})
+
+        configs.append({"type": "layout_start", "direction": "column"})
+        configs.append(_widget_config(save_button))
+        configs.append({"type": "layout_end"})
+        all_kids.append(save_button)
+
+        container = FlatContainer(_children_config=configs, _layout="vertical")
+        _wire_flat_sync(container, all_kids)
+    else:
+        from ipywidgets import Tab, VBox
+
+        tab_widgets = [VBox(children=ipytabs[title]) for title in titles]
+        tabs_widget = Tab(children=tab_widgets)
+        for i, title in enumerate(titles):
+            tabs_widget.set_title(i, str(title))
+        container = VBox(children=[tabs_widget, save_button])
 
     return {
         "widget": container,
         "wdict": wdict,
     }
-
-
-class _PreferencesContainer(anywidget.AnyWidget):
-    _esm = """
-    function render({ model, el }) {
-      const tabsWidget = model.get("tabs_widget");
-      const saveButton = model.get("save_button");
-
-      el.style.display = "flex";
-      el.style.flexDirection = "column";
-      el.style.gap = "10px";
-
-      if (model.widget_manager) {
-        Promise.all([
-          model.widget_manager.create_view(tabsWidget),
-          model.widget_manager.create_view(saveButton)
-        ]).then(([tabsView, buttonView]) => {
-          el.appendChild(tabsView.el);
-          el.appendChild(buttonView.el);
-        });
-      } else {
-        el.innerHTML = "<span>Widget manager not available</span>";
-      }
-    }
-    export default { render };
-    """
-    tabs_widget = traitlets.Any().tag(sync=True)
-    save_button = traitlets.Any().tag(sync=True)

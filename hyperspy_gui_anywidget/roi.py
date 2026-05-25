@@ -9,9 +9,10 @@ Each function follows the same pattern:
 5. Return ``{"widget": container, "wdict": wdict}``.
 """
 
-from hyperspy_gui_anywidget.utils import add_display_arg
-from hyperspy_gui_anywidget.custom_widgets import FloatTextWidget, ContainerWidget
 from link_traits import link
+
+from hyperspy_gui_anywidget.custom_widgets import ContainerWidget, FloatTextWidget
+from hyperspy_gui_anywidget.utils import add_display_arg
 
 
 @add_display_arg
@@ -238,8 +239,9 @@ def line2d_roi_aw(obj, **kwargs):
 
     linewidth = FloatTextWidget(description="linewidth")
     link((obj, "linewidth"), (linewidth, "value"))
+    container3 = ContainerWidget(children=[linewidth], layout="horizontal")
 
-    container = ContainerWidget(children=[container1, container2, linewidth], layout="vertical")
+    container = ContainerWidget(children=[container1, container2, container3], layout="vertical")
 
     wdict["x1"] = x1
     wdict["y1"] = y1

@@ -2,11 +2,11 @@
 
 import traitlets
 from anywidget.widget import AnyWidget
-
-from hyperspy_gui_anywidget.utils import add_display_arg, get_label
-from hyperspy_gui_anywidget.custom_widgets import FloatTextWidget, ContainerWidget
 from link_traits import link
 from traits.api import Undefined
+
+from hyperspy_gui_anywidget.custom_widgets import ContainerWidget, FloatTextWidget
+from hyperspy_gui_anywidget.utils import add_display_arg, get_label
 
 
 class ButtonWidget(AnyWidget):

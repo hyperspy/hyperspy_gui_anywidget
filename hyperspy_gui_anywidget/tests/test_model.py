@@ -1,13 +1,13 @@
+import hyperspy.api as hs
 import numpy as np
 import pytest
-
-import hyperspy.api as hs
 from hyperspy.component import Component, Parameter
-from hyperspy_gui_anywidget.tests.utils import KWARGS
 from hyperspy.models.model1d import ComponentFit
 
+from hyperspy_gui_anywidget.tests.utils import KWARGS
+
 # Some hyperspy version compat
-if not hasattr(hs.model, 'components1D'):
+if not hasattr(hs.model, "components1D"):
     pytest.skip("hyperspy components1D not available", allow_module_level=True)
 
 
@@ -116,8 +116,7 @@ def test_fit_component():
     s = hs.signals.Signal1D(np.random.normal(size=1000, loc=1)).get_histogram()
     s = hs.stack([s, s], axis=0)
     m = s.create_model()
-    m.extend([hs.model.components1D.Gaussian(),
-              hs.model.components1D.Gaussian()])
+    m.extend([hs.model.components1D.Gaussian(), hs.model.components1D.Gaussian()])
     g1, g2 = m
     g1.centre.value = 0
     g2.centre.value = 8
@@ -126,19 +125,28 @@ def test_fit_component():
     fc.ss_right_value = 4
     fc.only_current = not fc.only_current
     wd = fc.gui(**KWARGS)["anywidget"]["wdict"]
-    
+
     wd["fit_button"].clicks += 1
 
     assert wd["only_current"].value == fc.only_current
     wd["only_current"].value = not fc.only_current
     assert wd["only_current"].value == fc.only_current
     assert g2.centre.value == 8
-    np.testing.assert_allclose(g1.centre.value, 0.804, rtol=1E-2)
-    np.testing.assert_allclose(g1.sigma.value, 0.965, rtol=1E-2)
+    np.testing.assert_allclose(g1.centre.value, 0.804, rtol=1e-2)
+    np.testing.assert_allclose(g1.sigma.value, 0.965, rtol=1e-2)
 
     assert wd["iterpath"].disabled
     fc.only_current = False
     assert not wd["iterpath"].disabled
 
-    fc.signal._plot = type('obj', (object,), {'is_active': True})
+    fc.signal._plot = type("obj", (object,), {"is_active": True})
     wd["close_button"].clicks += 1
+
+
+def test_parameter_readout_format():
+    p = Parameter()
+    p.bmin = 0
+    p.bmax = 10
+    p.value = 1.5
+    wd = p.gui(**KWARGS)["anywidget"]["wdict"]
+    assert wd["value"].readout_format == ".2f"

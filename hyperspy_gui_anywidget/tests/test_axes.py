@@ -1,18 +1,18 @@
+import hyperspy.api as hs
 import numpy as np
 import pytest
 
-import hyperspy.api as hs
 from hyperspy_gui_anywidget.tests.utils import KWARGS
 
 
 def check_axis_attributes(axes_manager, widgets_dict, index, attributes):
     for attribute in attributes:
-        assert (widgets_dict["axis{}".format(index)][attribute].value ==
-                getattr(axes_manager[index], attribute))
+        assert widgets_dict["axis{}".format(index)][attribute].value == getattr(
+            axes_manager[index], attribute
+        )
 
 
 class TestAxes:
-
     def setup_method(self, method):
         self.s = hs.signals.Signal1D(np.empty((2, 3, 4)))
         am = self.s.axes_manager
@@ -30,77 +30,171 @@ class TestAxes:
     def test_navigation_sliders(self):
         s = self.s
         am = self.s.axes_manager
-        wd = s.axes_manager.gui_navigation_sliders(
-            **KWARGS)["anywidget"]["wdict"]
-        check_axis_attributes(axes_manager=am, widgets_dict=wd, index=0,
-                              attributes=("value", "index", "units"))
-        check_axis_attributes(axes_manager=am, widgets_dict=wd, index=1,
-                              attributes=("value", "index", "units"))
+        wd = s.axes_manager.gui_navigation_sliders(**KWARGS)["anywidget"]["wdict"]
+        check_axis_attributes(
+            axes_manager=am, widgets_dict=wd, index=0, attributes=("value", "index", "units")
+        )
+        check_axis_attributes(
+            axes_manager=am, widgets_dict=wd, index=1, attributes=("value", "index", "units")
+        )
         wd["axis0"]["value"].value = 1.5
         am[0].units = "cm"
-        check_axis_attributes(axes_manager=am, widgets_dict=wd, index=0,
-                              attributes=("value", "index", "units"))
+        check_axis_attributes(
+            axes_manager=am, widgets_dict=wd, index=0, attributes=("value", "index", "units")
+        )
 
     def test_axes_manager_gui(self):
         s = self.s
         am = self.s.axes_manager
         wd = s.axes_manager.gui(**KWARGS)["anywidget"]["wdict"]
-        check_axis_attributes(axes_manager=am, widgets_dict=wd, index=0,
-                              attributes=("value", "index", "units",
-                                          "index_in_array", "name",
-                                          "size", "scale", "offset"))
-        check_axis_attributes(axes_manager=am, widgets_dict=wd, index=1,
-                              attributes=("value", "index", "units",
-                                          "index_in_array", "name", "size",
-                                          "scale", "offset"))
-        check_axis_attributes(axes_manager=am, widgets_dict=wd, index=2,
-                              attributes=("units", "index_in_array",
-                                          "name", "size", "scale",
-                                          "offset"))
+        check_axis_attributes(
+            axes_manager=am,
+            widgets_dict=wd,
+            index=0,
+            attributes=(
+                "value",
+                "index",
+                "units",
+                "index_in_array",
+                "name",
+                "size",
+                "scale",
+                "offset",
+            ),
+        )
+        check_axis_attributes(
+            axes_manager=am,
+            widgets_dict=wd,
+            index=1,
+            attributes=(
+                "value",
+                "index",
+                "units",
+                "index_in_array",
+                "name",
+                "size",
+                "scale",
+                "offset",
+            ),
+        )
+        check_axis_attributes(
+            axes_manager=am,
+            widgets_dict=wd,
+            index=2,
+            attributes=("units", "index_in_array", "name", "size", "scale", "offset"),
+        )
         wd["axis0"]["value"].value = 1.0
         wd["axis0"]["name"].value = "parrot"
         wd["axis0"]["units"].value = "cm"
-        check_axis_attributes(axes_manager=am, widgets_dict=wd, index=0,
-                              attributes=("value", "index", "units",
-                                          "index_in_array", "name",
-                                          "size", "scale", "offset"))
+        check_axis_attributes(
+            axes_manager=am,
+            widgets_dict=wd,
+            index=0,
+            attributes=(
+                "value",
+                "index",
+                "units",
+                "index_in_array",
+                "name",
+                "size",
+                "scale",
+                "offset",
+            ),
+        )
 
 
 def test_non_uniform_axes():
     try:
         import hyperspy.axes
-        if not hasattr(hyperspy.axes, 'UniformDataAxis'):
+
+        if not hasattr(hyperspy.axes, "UniformDataAxis"):
             pytest.skip("HyperSpy version doesn't support non-uniform axis")
     except ImportError:
         pytest.skip("HyperSpy version doesn't support non-uniform axis")
 
-    dict0 = {'scale': 1.0, 'size': 2, }
-    dict1 = {'expression': 'a / (x+b)', 'a': 1240, 'b': 1, 'size': 3,
-             'name': 'plumage', 'units': 'beautiful'}
-    dict2 = {'axis': np.arange(4), 'name': 'norwegianblue', 'units': 'ex'}
-    dict3 = {'expression': 'a / (x+b)', 'a': 1240, 'b': 1, 'x': dict2,
-             'name': 'pushing up', 'units': 'the daisies'}
+    dict0 = {
+        "scale": 1.0,
+        "size": 2,
+    }
+    dict1 = {
+        "expression": "a / (x+b)",
+        "a": 1240,
+        "b": 1,
+        "size": 3,
+        "name": "plumage",
+        "units": "beautiful",
+    }
+    dict2 = {"axis": np.arange(4), "name": "norwegianblue", "units": "ex"}
+    dict3 = {
+        "expression": "a / (x+b)",
+        "a": 1240,
+        "b": 1,
+        "x": dict2,
+        "name": "pushing up",
+        "units": "the daisies",
+    }
     s = hs.signals.Signal1D(np.empty((3, 2, 4, 4)), axes=[dict0, dict1, dict2, dict3])
     s.axes_manager[0].navigate = False
 
     am = s.axes_manager
     wd = s.axes_manager.gui(**KWARGS)["anywidget"]["wdict"]
-    check_axis_attributes(axes_manager=am, widgets_dict=wd, index=0,
-                          attributes=("name", "units", "size", "index",
-                                      "value", "index_in_array",))
-    check_axis_attributes(axes_manager=am, widgets_dict=wd, index=2,
-                          attributes=("name", "units", "size",
-                                      "index_in_array"))
-    check_axis_attributes(axes_manager=am, widgets_dict=wd, index=3,
-                          attributes=("name", "units", "size",
-                                      "index_in_array"))
+    check_axis_attributes(
+        axes_manager=am,
+        widgets_dict=wd,
+        index=0,
+        attributes=(
+            "name",
+            "units",
+            "size",
+            "index",
+            "value",
+            "index_in_array",
+        ),
+    )
+    check_axis_attributes(
+        axes_manager=am,
+        widgets_dict=wd,
+        index=2,
+        attributes=("name", "units", "size", "index_in_array"),
+    )
+    check_axis_attributes(
+        axes_manager=am,
+        widgets_dict=wd,
+        index=3,
+        attributes=("name", "units", "size", "index_in_array"),
+    )
     s.axes_manager.gui_navigation_sliders(**KWARGS)
-    check_axis_attributes(axes_manager=am, widgets_dict=wd, index=0,
-                          attributes=("name", "units", "size", "index",
-                                      "value", "index_in_array",))
-    check_axis_attributes(axes_manager=am, widgets_dict=wd, index=2,
-                          attributes=("name", "units", "size",
-                                      "index_in_array"))
-    check_axis_attributes(axes_manager=am, widgets_dict=wd, index=3,
-                          attributes=("name", "units", "size",
-                                      "index_in_array"))
+    check_axis_attributes(
+        axes_manager=am,
+        widgets_dict=wd,
+        index=0,
+        attributes=(
+            "name",
+            "units",
+            "size",
+            "index",
+            "value",
+            "index_in_array",
+        ),
+    )
+    check_axis_attributes(
+        axes_manager=am,
+        widgets_dict=wd,
+        index=2,
+        attributes=("name", "units", "size", "index_in_array"),
+    )
+    check_axis_attributes(
+        axes_manager=am,
+        widgets_dict=wd,
+        index=3,
+        attributes=("name", "units", "size", "index_in_array"),
+    )
+
+
+def test_axes_manager_titles_follow_ipywidgets_numbering():
+    s = hs.signals.Signal1D(np.empty((2, 3, 4)))
+    result = s.axes_manager.gui(**KWARGS)["anywidget"]["widget"]
+    nav_container, sig_container = result.children
+    assert nav_container.get_title(0) == "Axis 0"
+    assert nav_container.get_title(1) == "Axis 1"
+    assert sig_container.get_title(0) == "Axis 3"
