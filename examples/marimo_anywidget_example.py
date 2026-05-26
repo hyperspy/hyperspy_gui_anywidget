@@ -43,31 +43,27 @@ def _(mo):
 
 
 @app.cell
-def _(hs, mo):
+def _(hs):
     _roi = hs.roi.SpanROI(left=5, right=15)
-    _widget = _roi.gui(toolkit="anywidget", display=False)["anywidget"]["widget"]
-    return mo.ui.anywidget(_widget)
+    return _roi.gui(toolkit="anywidget")
 
 
 @app.cell
-def _(hs, mo):
+def _(hs):
     _roi = hs.roi.Point2DROI(x=2, y=3)
-    _widget = _roi.gui(toolkit="anywidget", display=False)["anywidget"]["widget"]
-    return mo.ui.anywidget(_widget)
+    return _roi.gui(toolkit="anywidget")
 
 
 @app.cell
-def _(hs, mo):
+def _(hs):
     _roi = hs.roi.Line2DROI(x1=0, y1=1, x2=10, y2=4, linewidth=2)
-    _widget = _roi.gui(toolkit="anywidget", display=False)["anywidget"]["widget"]
-    return mo.ui.anywidget(_widget)
+    return _roi.gui(toolkit="anywidget")
 
 
 @app.cell
-def _(hs, mo):
+def _(hs):
     _roi = hs.roi.CircleROI(cx=8, cy=6, r=4, r_inner=1)
-    _widget = _roi.gui(toolkit="anywidget", display=False)["anywidget"]["widget"]
-    return mo.ui.anywidget(_widget)
+    return _roi.gui(toolkit="anywidget")
 
 
 @app.cell
@@ -76,10 +72,9 @@ def _(mo):
 
 
 @app.cell
-def _(hs, mo, np):
+def _(hs, np):
     _signal = hs.signals.Signal1D(np.random.random((2, 3, 20)))
-    _widget = _signal.axes_manager.gui(toolkit="anywidget", display=False)["anywidget"]["widget"]
-    return mo.ui.anywidget(_widget)
+    return _signal.axes_manager.gui(toolkit="anywidget")
 
 
 @app.cell
@@ -94,9 +89,10 @@ def _(hs, mo):
     _model = _signal.create_model()
     _gaussian = hs.model.components1D.Gaussian(A=10, centre=5, sigma=1)
     _model.append(_gaussian)
-    _component_widget = _gaussian.gui(toolkit="anywidget", display=False)["anywidget"]["widget"]
-    _model_widget = _model.gui(toolkit="anywidget", display=False)["anywidget"]["widget"]
-    return mo.vstack([mo.ui.anywidget(_component_widget), mo.ui.anywidget(_model_widget)])
+    return mo.vstack([
+        _gaussian.gui(toolkit="anywidget"),
+        _model.gui(toolkit="anywidget"),
+    ])
 
 
 @app.cell
@@ -105,24 +101,21 @@ def _(mo):
 
 
 @app.cell
-def _(hs, mo, np):
+def _(hs, np):
     _signal = hs.signals.Signal1D(np.arange(100.0) ** 2)
-    _widget = _signal.smooth_savitzky_golay(toolkit="anywidget", display=False)["anywidget"]["widget"]
-    return mo.ui.anywidget(_widget)
+    return _signal.smooth_savitzky_golay(toolkit="anywidget")
 
 
 @app.cell
-def _(hs, mo, np):
+def _(hs, np):
     _signal = hs.signals.Signal1D(np.arange(100.0) ** 2)
-    _widget = _signal.remove_background(toolkit="anywidget", display=False)["anywidget"]["widget"]
-    return mo.ui.anywidget(_widget)
+    return _signal.remove_background(toolkit="anywidget")
 
 
 @app.cell
-def _(hs, mo, np):
+def _(hs, np):
     _signal = hs.signals.Signal1D(np.arange(100.0) * 3.0)
-    _widget = _signal.calibrate(toolkit="anywidget", display=False)["anywidget"]["widget"]
-    return mo.ui.anywidget(_widget)
+    return _signal.calibrate(toolkit="anywidget")
 
 
 @app.cell
@@ -131,6 +124,22 @@ def _(mo):
 
 
 @app.cell
+def _(hs):
+    return hs.preferences.gui(toolkit="anywidget")
+
+
+@app.cell
+def _(mo):
+    return mo.md("### Marimo-native features (bonus)")
+
+
+@app.cell
 def _(hs, mo):
-    _widget = hs.preferences.gui(toolkit="anywidget", display=False)["anywidget"]["widget"]
-    return mo.ui.anywidget(_widget)
+    _roi = hs.roi.SpanROI(left=5, right=15)
+    _res = _roi.gui(toolkit="anywidget", display=False)
+    _widget = _res["anywidget"]["widget"]
+    _w = mo.ui.anywidget(_widget)
+    return mo.vstack([
+        _w,
+        mo.md(f"Current ROI: {_w.value}"),
+    ])
