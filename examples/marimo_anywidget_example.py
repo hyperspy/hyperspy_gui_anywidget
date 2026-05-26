@@ -39,93 +39,147 @@ def _():
 
 @app.cell
 def _(mo):
-    return mo.md("### ROI widgets")
+    return mo.md(
+        """## hyperspy_gui_anywidget in Marimo
+
+This app mirrors the Jupyter example as closely as possible while using Marimo's layout model.
+
+Most users should keep the default `display=True`, which displays the widget inline as soon as you call the GUI method."""
+    )
+
+
+@app.cell
+def _(mo):
+    return mo.md("## Preferences")
+
+
+@app.cell
+def _(hs):
+    return hs.preferences.gui(toolkit="anywidget", display=True)
+
+
+@app.cell
+def _(mo):
+    return mo.md("## SpanROI")
 
 
 @app.cell
 def _(hs):
     _roi = hs.roi.SpanROI(left=5, right=15)
-    return _roi.gui(toolkit="anywidget")
-
-
-@app.cell
-def _(hs):
-    _roi = hs.roi.Point2DROI(x=2, y=3)
-    return _roi.gui(toolkit="anywidget")
-
-
-@app.cell
-def _(hs):
-    _roi = hs.roi.Line2DROI(x1=0, y1=1, x2=10, y2=4, linewidth=2)
-    return _roi.gui(toolkit="anywidget")
-
-
-@app.cell
-def _(hs):
-    _roi = hs.roi.CircleROI(cx=8, cy=6, r=4, r_inner=1)
-    return _roi.gui(toolkit="anywidget")
+    return _roi.gui(toolkit="anywidget", display=True)
 
 
 @app.cell
 def _(mo):
-    return mo.md("### Axes manager")
+    return mo.md("## More ROIs")
+
+
+@app.cell
+def _(hs):
+    _point_roi = hs.roi.Point2DROI(x=3, y=7)
+    _line_roi = hs.roi.Line2DROI(x1=0, y1=0, x2=10, y2=10, linewidth=2)
+    _circle_roi = hs.roi.CircleROI(cx=5, cy=5, r=3, r_inner=1)
+    return (
+        _point_roi.gui(toolkit="anywidget", display=True),
+        _line_roi.gui(toolkit="anywidget", display=True),
+        _circle_roi.gui(toolkit="anywidget", display=True),
+    )
+
+
+@app.cell
+def _(mo):
+    return mo.md("## Axes manager")
 
 
 @app.cell
 def _(hs, np):
-    _signal = hs.signals.Signal1D(np.random.random((2, 3, 20)))
-    return _signal.axes_manager.gui(toolkit="anywidget")
+    _signal = hs.signals.Signal1D(np.random.random((4, 6, 20)))
+    return _signal.axes_manager.gui(toolkit="anywidget", display=True)
 
 
 @app.cell
 def _(mo):
-    return mo.md("### Model components")
+    return mo.md("## Signal plot")
 
 
 @app.cell
-def _(hs, mo):
-    _signal = hs.signals.Signal1D([1.0] * 100)
+def _(hs, np):
+    _signal = hs.signals.Signal1D(np.arange(100.0))
+    _signal.plot()
+    return
+
+
+@app.cell
+def _(mo):
+    return mo.md("## Model parameter")
+
+
+@app.cell
+def _(hs, np):
+    _signal = hs.signals.Signal1D(np.ones(100))
     _signal.axes_manager[0].scale = 0.1
     _model = _signal.create_model()
     _gaussian = hs.model.components1D.Gaussian(A=10, centre=5, sigma=1)
     _model.append(_gaussian)
-    return mo.vstack([
-        _gaussian.gui(toolkit="anywidget"),
-        _model.gui(toolkit="anywidget"),
-    ])
+    return _gaussian.A.gui(toolkit="anywidget", display=True)
 
 
 @app.cell
 def _(mo):
-    return mo.md("### Signal processing tools")
+    return mo.md("## Model plot + component GUI")
 
 
 @app.cell
 def _(hs, np):
-    _signal = hs.signals.Signal1D(np.arange(100.0) ** 2)
-    return _signal.smooth_savitzky_golay(toolkit="anywidget")
-
-
-@app.cell
-def _(hs, np):
-    _signal = hs.signals.Signal1D(np.arange(100.0) ** 2)
-    return _signal.remove_background(toolkit="anywidget")
-
-
-@app.cell
-def _(hs, np):
-    _signal = hs.signals.Signal1D(np.arange(100.0) * 3.0)
-    return _signal.calibrate(toolkit="anywidget")
+    _signal = hs.signals.Signal1D(np.ones(100))
+    _signal.axes_manager[0].scale = 0.1
+    _model = _signal.create_model()
+    _gaussian = hs.model.components1D.Gaussian(A=10, centre=5, sigma=1)
+    _model.append(_gaussian)
+    _model.plot()
+    return _gaussian.gui(toolkit="anywidget", display=True)
 
 
 @app.cell
 def _(mo):
-    return mo.md("### Preferences")
+    return mo.md("## Smooth Savitzky-Golay")
+
+
+@app.cell
+def _(hs, np):
+    _smooth_signal = hs.signals.Signal1D(1 + np.arange(100.0) ** 2)
+    _smooth_signal.add_gaussian_noise(50)
+    _smooth_signal.change_dtype("float")
+    return _smooth_signal.smooth_savitzky_golay(toolkit="anywidget", display=True)
+
+
+@app.cell
+def _(mo):
+    return mo.md("## Background removal + calibrate")
+
+
+@app.cell
+def _(hs, np):
+    _power_law_signal = hs.signals.Signal1D(50 + 1000 / (np.arange(1, 101.0) ** 1.5))
+    _power_law_signal.change_dtype("float")
+    _power_law_signal.remove_background(toolkit="anywidget", display=True)
+
+    _wrong_calibration = hs.signals.Signal1D(np.arange(100.0) * 3.0)
+    _wrong_calibration.axes_manager[0].offset = 10
+    _wrong_calibration.axes_manager[0].scale = 2
+    _wrong_calibration.axes_manager[0].units = "nm"
+    return _wrong_calibration.calibrate(toolkit="anywidget", display=True)
+
+
+@app.cell
+def _(mo):
+    return mo.md("## display=False example")
 
 
 @app.cell
 def _(hs):
-    return hs.preferences.gui(toolkit="anywidget")
+    _result = hs.roi.Point2DROI(x=3, y=7).gui(toolkit="anywidget", display=False)
+    return _result["anywidget"].keys()
 
 
 @app.cell

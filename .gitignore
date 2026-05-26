@@ -102,8 +102,13 @@ venv.bak/
 # Tooling state
 .claude/
 .omc/
+!.omc/project-memory.json
+.opencode/
 .ruff_cache/
 .sisyphus/
+
+# Marimo session state
+__marimo__/
 
 # IDE
 .idea/
