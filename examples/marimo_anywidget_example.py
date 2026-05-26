@@ -13,7 +13,7 @@
 #
 # [tool.uv.sources]
 # hyperspy = { git = "https://github.com/francisco-dlp/hyperspy.git", branch = "NEW_anywidgets_gui" }
-# hyperspy-gui-anywidget = { path = "..", editable = true }
+# hyperspy-gui-anywidget = { git = "https://github.com/hyperspy/hyperspy_gui_anywidget.git", branch = "master" }
 #
 # [tool.uv]
 # override-dependencies = ["hyperspy==2.3.0"]
