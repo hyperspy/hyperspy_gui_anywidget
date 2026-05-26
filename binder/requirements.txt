@@ -1,6 +1,7 @@
 git+https://github.com/francisco-dlp/hyperspy.git@NEW_anywidgets_gui
 anywidget>=0.9.0
 hyperspy_gui_ipywidgets
+ipympl
 ipywidgets>=7.6.0
 link_traits
 traitlets>=5.0
