@@ -83,6 +83,7 @@ class TestAxes:
             index=2,
             attributes=("units", "index_in_array", "name", "size", "scale", "offset"),
         )
+        # widget → axis
         wd["axis0"]["value"].value = 1.0
         wd["axis0"]["name"].value = "parrot"
         wd["axis0"]["units"].value = "cm"
@@ -100,6 +101,24 @@ class TestAxes:
                 "scale",
                 "offset",
             ),
+        )
+
+        # axis → widget (reverse — use non-value text attrs to avoid
+        # FloatSlider value validator feedback loop)
+        am[1].name = "blue"
+        am[1].units = "nm"
+        am[2].name = "signal_name"
+        check_axis_attributes(
+            axes_manager=am,
+            widgets_dict=wd,
+            index=1,
+            attributes=("name", "units", "index_in_array", "size", "scale", "offset"),
+        )
+        check_axis_attributes(
+            axes_manager=am,
+            widgets_dict=wd,
+            index=2,
+            attributes=("units", "index_in_array", "name", "size", "scale", "offset"),
         )
 
 
