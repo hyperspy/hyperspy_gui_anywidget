@@ -1464,6 +1464,7 @@ class FlatContainer(AnyWidget):
               const newValues = { ...model.get("_children_values") };
               newValues[cfg.id] = val;
               model.set("_children_values", newValues);
+              model.save_changes();
             }
           });
           input.addEventListener("change", sliderUpdate);
