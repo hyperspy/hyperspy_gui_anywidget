@@ -43,6 +43,22 @@ class TestAxes:
             axes_manager=am, widgets_dict=wd, index=0, attributes=("value", "index", "units")
         )
 
+    def test_navigation_sliders_change_signal_index(self):
+        s = hs.signals.Signal1D(np.arange(10 * 4).reshape(10, 4))
+        am = s.axes_manager
+        assert am.indices == (0,)  # start at index 0
+        wd = s.axes_manager.gui_navigation_sliders(**KWARGS)["anywidget"]["wdict"]
+
+        # Navigate to index 3 via the widget
+        wd["axis0"]["index"].value = 3
+        assert am.indices == (3,)
+        assert am[0].index == 3
+
+        # Navigate to index 7
+        wd["axis0"]["index"].value = 7
+        assert am.indices == (7,)
+        assert am[0].index == 7
+
     def test_axes_manager_gui(self):
         s = self.s
         am = self.s.axes_manager

@@ -247,6 +247,7 @@ class IntSliderWidget(AnyWidget):
         readout.textContent = val;
         if (model.get("continuous_update")) {
           model.set("value", val);
+          model.save_changes();
         }
       });
       input.addEventListener("change", commitValue);
@@ -354,6 +355,7 @@ class FloatSliderWidget(AnyWidget):
         readout.textContent = formatFloat(val, model.get("readout_format"));
         if (model.get("continuous_update")) {
           model.set("value", val);
+          model.save_changes();
         }
       });
       input.addEventListener("change", commitValue);
