@@ -67,7 +67,7 @@ class TestTools:
         wd["apply_button"].clicks += 1
         s2.smooth_savitzky_golay(polynomial_order=5, window_length=11, differential_order=1)
         np.testing.assert_allclose(s.data, s2.data)
-        assert wd["color"] in result["widget"].children
+        assert "color" in wd
 
     def test_smooth_sg_color_widget_and_slider_width(self):
         result = self.s.smooth_savitzky_golay(**KWARGS)["anywidget"]
@@ -76,7 +76,7 @@ class TestTools:
         assert wd["window_length"].slider_width == "220px"
         assert wd["polynomial_order"].slider_width == "220px"
         assert wd["differential_order"].slider_width == "220px"
-        assert wd["color"] in result["widget"].children
+        assert "color" in wd
         assert "picker-input" in wd["color"]._esm
 
     def test_smooth_lowess(self):

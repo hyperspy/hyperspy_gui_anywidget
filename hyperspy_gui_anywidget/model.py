@@ -168,10 +168,11 @@ def get_parameter_widget(obj, **kwargs):
         )
 
         def on_update_clicked(change):
-            for value, container in zip(obj.value, par_widgets):
-                minwidget = container.children[0]
-                vwidget = container.children[1]
-                maxwidget = container.children[2]
+            for i, value in enumerate(obj.value):
+                element_wd = wdict["element{}".format(i)]
+                minwidget = element_wd["min"]
+                vwidget = element_wd["value"]
+                maxwidget = element_wd["max"]
                 if value < vwidget.min:
                     minwidget.value = value
                 elif value > vwidget.max:
@@ -323,18 +324,22 @@ def get_scalable_fixed_patter_widget(obj, **kwargs):
         ``{"widget": ContainerWidget, "wdict": {...}}`` when
         ``display=False``, otherwise ``None`` (widget displayed inline).
     """
-    cdict = get_component_widget(obj, display=False)
-    wdict = cdict["wdict"]
-    container = cdict["widget"]
+    wdict = {}
+    active = CheckboxWidget(description="active", value=obj.active)
+    wdict["active"] = active
+    link((obj, "active"), (active, "value"))
 
     interpolate = CheckboxWidget(description="interpolate", value=obj.interpolate)
     wdict["interpolate"] = interpolate
     link((obj, "interpolate"), (interpolate, "value"))
 
-    children = list(container.children)
-    children.insert(1, interpolate)
-    container.children = children
+    children = [active, interpolate]
+    for parameter in obj.parameters:
+        pardict = parameter.gui(toolkit="anywidget", display=False)["anywidget"]
+        wdict["parameter_{}".format(parameter.name)] = pardict["wdict"]
+        children.append(pardict["widget"])
 
+    container = ContainerWidget(children=children, layout="vertical")
     return {
         "widget": container,
         "wdict": wdict,
