@@ -90,6 +90,8 @@ def interactive_range_aw(obj, **kwargs):
 
     def on_close_clicked(change):
         obj.span_selector_switch(False)
+        if hasattr(box, "close"):
+            box.close()
 
     close.observe(on_close_clicked, names="clicks")
 
@@ -165,7 +167,9 @@ def calibrate2d_aw(obj, **kwargs):
     apply.observe(on_apply_clicked, names="clicks")
 
     def on_close_clicked(change):
-        obj.on = False
+        obj.close()  # disconnects _line.events.changed then sets obj.on = False
+        if hasattr(box, "close"):
+            box.close()
 
     close.observe(on_close_clicked, names="clicks")
 
@@ -260,6 +264,8 @@ def calibrate_aw(obj, **kwargs):
 
     def on_close_clicked(change):
         obj.span_selector_switch(False)
+        if hasattr(box, "close"):
+            box.close()
 
     close.observe(on_close_clicked, names="clicks")
 
@@ -408,6 +414,8 @@ def print_edges_table_aw(obj, **kwargs):
 
     def on_close_clicked(change):
         obj.span_selector_switch(False)
+        if hasattr(box, "close"):
+            box.close()
 
     close.observe(on_close_clicked, names="clicks")
 
@@ -535,6 +543,8 @@ def smooth_savitzky_golay_aw(obj, **kwargs):
 
     def on_close_clicked(change):
         obj.close()
+        if hasattr(box, "close"):
+            box.close()
 
     close.observe(on_close_clicked, names="clicks")
 
@@ -599,6 +609,8 @@ def smooth_lowess_aw(obj, **kwargs):
 
     def on_close_clicked(change):
         obj.close()
+        if hasattr(box, "close"):
+            box.close()
 
     close.observe(on_close_clicked, names="clicks")
 
@@ -665,6 +677,8 @@ def smooth_tv_aw(obj, **kwargs):
 
     def on_close_clicked(change):
         obj.close()
+        if hasattr(box, "close"):
+            box.close()
 
     close.observe(on_close_clicked, names="clicks")
 
@@ -775,6 +789,8 @@ def remove_background_aw(obj, **kwargs):
 
     def on_close_clicked(change):
         obj.span_selector_switch(False)
+        if hasattr(box, "close"):
+            box.close()
 
     close.observe(on_close_clicked, names="clicks")
 
@@ -894,6 +910,8 @@ def image_constast_editor_aw(obj, **kwargs):
 
     def on_close_clicked(change):
         obj.close()
+        if hasattr(box, "close"):
+            box.close()
 
     close.observe(on_close_clicked, names="clicks")
 
@@ -1006,6 +1024,8 @@ def spikes_removal_aw(obj, **kwargs):
 
     def on_close_clicked(change):
         obj.span_selector_switch(False)
+        if hasattr(box, "close"):
+            box.close()
 
     close.observe(on_close_clicked, names="clicks")
 
@@ -1163,6 +1183,8 @@ def remove_baseline_aw(obj, **kwargs):
 
     def on_close_clicked(change):
         obj.close()
+        if hasattr(box, "close"):
+            box.close()
 
     close.observe(on_close_clicked, names="clicks")
 
@@ -1231,6 +1253,8 @@ def smooth_butterworth_aw(obj, **kwargs):
 
     def on_close_clicked(change):
         obj.close()
+        if hasattr(box, "close"):
+            box.close()
 
     close.observe(on_close_clicked, names="clicks")
 
@@ -1438,6 +1462,8 @@ def find_peaks2D_aw(obj, **kwargs):
 
     def on_close_clicked(change):
         obj.close()
+        if hasattr(box, "close"):
+            box.close()
 
     close.observe(on_close_clicked, names="clicks")
 

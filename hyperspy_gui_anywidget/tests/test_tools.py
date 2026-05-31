@@ -291,3 +291,64 @@ def test_remove_background_polynomial_order_visibility_flag():
     assert wd["polynomial_order"].visible is False
     wd["background_type"].value = "Polynomial"
     assert wd["polynomial_order"].visible is True
+
+
+def test_calibrate2d_close_disconnects_events():
+    from unittest.mock import patch
+
+    s = hs.signals.Signal2D(np.zeros((100, 100)))
+    cal2d = Signal2DCalibration(s)
+    wd = cal2d.gui(**KWARGS)["anywidget"]["wdict"]
+
+    with patch.object(cal2d, "close", wraps=cal2d.close) as mock_close:
+        wd["close_button"].clicks += 1
+        mock_close.assert_called_once()
+
+    assert cal2d._line is None
+    assert cal2d.on is False
+
+
+def test_interactive_range_close_calls_span_selector_switch():
+    from unittest.mock import patch
+
+    from hyperspy.signal_tools import Signal1DRangeSelector
+
+    from hyperspy_gui_anywidget.tools import interactive_range_aw
+
+    s = hs.signals.Signal1D(1 + np.arange(100) ** 2)
+    s.change_dtype("float")
+    s.axes_manager[0].offset = 10
+    s.axes_manager[0].scale = 2
+
+    obj = Signal1DRangeSelector(s)
+    obj.span_selector_switch(True)
+    result = interactive_range_aw(obj, toolkit="anywidget", display=False)
+    wd = result["wdict"]
+
+    with patch.object(obj, "span_selector_switch") as mock_switch:
+        wd["close_button"].clicks += 1
+        mock_switch.assert_called_once_with(False)
+
+
+def test_smooth_sg_close_cleans_up():
+    s = hs.signals.Signal1D(1 + np.arange(100) ** 2)
+    s.change_dtype("float")
+    s.add_gaussian_noise(0.1)
+
+    result = s.smooth_savitzky_golay(**KWARGS)["anywidget"]
+    result["wdict"]["close_button"].clicks += 1
+
+
+def test_contrast_editor_close_calls_obj_close():
+    from unittest.mock import patch
+
+    np.random.seed(1)
+    im = hs.signals.Signal2D(np.random.random((32, 32)))
+    im.plot()
+    ceditor = ImageContrastEditor(im._plot.signal_plot)
+    ceditor.ax.figure.canvas.draw_idle()
+    wd = ceditor.gui(**KWARGS)["anywidget"]["wdict"]
+
+    with patch.object(ceditor, "close", wraps=ceditor.close) as mock_close:
+        wd["close_button"].clicks += 1
+        mock_close.assert_called_once()
