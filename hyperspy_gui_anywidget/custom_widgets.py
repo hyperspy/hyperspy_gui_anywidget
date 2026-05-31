@@ -1107,9 +1107,17 @@ class FlatContainer(AnyWidget):
         return normalizeColor(inputValue) || "#000000";
       }
 
-      if (model.get("_closed")) { el.style.display = "none"; return; }
+      function _hideWidget() {
+        // In Marimo, anywidgets render inside Shadow DOM; el is inside the
+        // shadow root so we must hide the shadow host to remove the element
+        // entirely.  In Jupyter, el is in the light DOM so we hide it directly.
+        const host = el.getRootNode().host;
+        if (host) host.style.display = "none";
+        else el.style.display = "none";
+      }
+      if (model.get("_closed")) { _hideWidget(); return; }
       model.on("change:_closed", () => {
-        if (model.get("_closed")) el.style.display = "none";
+        if (model.get("_closed")) _hideWidget();
       });
 
       el.style.display = "flex";
