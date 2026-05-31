@@ -6,7 +6,6 @@ from hyperspy_gui_anywidget.custom_widgets import (
     BoundedFloatTextWidget,
     CheckboxWidget,
     ContainerWidget,
-    FloatSliderWidget,
     FloatTextWidget,
     IntSliderWidget,
     IntTextWidget,
@@ -112,14 +111,10 @@ def _get_axis_widgets(obj):
         link((obj, "index"), (index, "value"))
         wd["index"] = index
 
-        value = FloatSliderWidget(min=obj.low_value, max=obj.high_value, description="Value")
+        value = FloatTextWidget(description="Value", disabled=True)
         wd["value"] = value
         widgets.append(value)
         link((obj, "value"), (value, "value"))
-        link((obj, "high_value"), (value, "max"))
-        link((obj, "low_value"), (value, "min"))
-        if hasattr(obj, "scale"):
-            link((obj, "scale"), (value, "step"))
 
     units = TextWidget(description="Units")
     widgets.append(units)

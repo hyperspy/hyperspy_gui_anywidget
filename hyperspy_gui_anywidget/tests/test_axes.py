@@ -1,3 +1,6 @@
+import sys
+import types
+
 import hyperspy.api as hs
 import numpy as np
 import pytest
@@ -63,6 +66,11 @@ class TestAxes:
         s = self.s
         am = self.s.axes_manager
         wd = s.axes_manager.gui(**KWARGS)["anywidget"]["wdict"]
+        # Verify value widget is a read-only FloatTextWidget display
+        from hyperspy_gui_anywidget.custom_widgets import FloatTextWidget
+
+        assert isinstance(wd["axis0"]["value"], FloatTextWidget)
+        assert wd["axis0"]["value"].disabled is True
         check_axis_attributes(
             axes_manager=am,
             widgets_dict=wd,
@@ -99,8 +107,8 @@ class TestAxes:
             index=2,
             attributes=("units", "index_in_array", "name", "size", "scale", "offset"),
         )
-        # widget → axis
-        wd["axis0"]["value"].value = 1.0
+        # widget → axis (index change cascades value to read-only text display via link_traits)
+        wd["axis0"]["index"].value = 1
         wd["axis0"]["name"].value = "parrot"
         wd["axis0"]["units"].value = "cm"
         check_axis_attributes(
@@ -119,8 +127,7 @@ class TestAxes:
             ),
         )
 
-        # axis → widget (reverse — use non-value text attrs to avoid
-        # FloatSlider value validator feedback loop)
+        # axis → widget (reverse sync)
         am[1].name = "blue"
         am[1].units = "nm"
         am[2].name = "signal_name"
@@ -233,3 +240,90 @@ def test_axes_manager_titles_follow_ipywidgets_numbering():
     assert nav_container.get_title(0) == "Axis 0"
     assert nav_container.get_title(1) == "Axis 1"
     assert sig_container.get_title(0) == "Axis 3"
+
+
+class TestMarimoPaths:
+    """Tests for the Marimo FlatContainer path."""
+
+    def setup_method(self, method):
+        # Simulate Marimo being present for the duration of each test.
+        sys.modules["marimo"] = types.ModuleType("marimo")
+
+    def teardown_method(self, method):
+        sys.modules.pop("marimo", None)
+
+    def test_axes_manager_gui_marimo_returns_flat_container(self):
+        from hyperspy_gui_anywidget.custom_widgets import FlatContainer
+
+        s = hs.signals.Signal1D(np.arange(3 * 4).reshape(3, 4))
+        result = s.axes_manager.gui(**KWARGS)["anywidget"]
+        assert isinstance(result["widget"], FlatContainer)
+
+    def test_axes_manager_gui_marimo_widget_to_axis_sync(self):
+        """Simulated browser update on the outer FlatContainer propagates to the axis."""
+        s = hs.signals.Signal1D(np.arange(3 * 4).reshape(3, 4))
+        am = s.axes_manager
+        assert am[0].index == 0
+
+        result = s.axes_manager.gui(**KWARGS)["anywidget"]
+        outer = result["widget"]
+        wd = result["wdict"]
+        index_widget = wd["axis0"]["index"]
+
+        # Simulate the browser sending a slider update to the outermost FlatContainer.
+        slider_id = str(id(index_widget))
+        new_vals = dict(outer._children_values)
+        new_vals[slider_id] = 2
+        outer._children_values = new_vals
+
+        assert index_widget.value == 2
+        assert am[0].index == 2
+
+    def test_axes_manager_gui_marimo_axis_to_widget_sync(self):
+        """Python-side axis change propagates back to the outer FlatContainer."""
+        s = hs.signals.Signal1D(np.arange(3 * 4).reshape(3, 4))
+        am = s.axes_manager
+        result = s.axes_manager.gui(**KWARGS)["anywidget"]
+        outer = result["widget"]
+        wd = result["wdict"]
+        index_widget = wd["axis0"]["index"]
+
+        am[0].index = 2
+
+        assert index_widget.value == 2
+        slider_id = str(id(index_widget))
+        assert outer._children_values.get(slider_id) == 2
+
+    def test_axes_manager_gui_marimo_second_drag_updates_axis(self):
+        """Second simulated drag must update the axis (regression: slider was sticky after first drag)."""
+        s = hs.signals.Signal1D(np.arange(3 * 4).reshape(3, 4))
+        am = s.axes_manager
+        assert am[0].index == 0
+
+        result = s.axes_manager.gui(**KWARGS)["anywidget"]
+        outer = result["widget"]
+        wd = result["wdict"]
+        index_widget = wd["axis0"]["index"]
+        slider_id = str(id(index_widget))
+
+        # First drag: 0 → 1
+        new_vals = dict(outer._children_values)
+        new_vals[slider_id] = 1
+        outer._children_values = new_vals
+        assert am[0].index == 1
+
+        # Second drag: 1 → 2
+        new_vals = dict(outer._children_values)
+        new_vals[slider_id] = 2
+        outer._children_values = new_vals
+        assert index_widget.value == 2
+        assert am[0].index == 2
+        assert outer._children_values.get(slider_id) == 2
+
+        # Third drag: 2 → 0 (going backwards must also work)
+        new_vals = dict(outer._children_values)
+        new_vals[slider_id] = 0
+        outer._children_values = new_vals
+        assert index_widget.value == 0
+        assert am[0].index == 0
+        assert outer._children_values.get(slider_id) == 0

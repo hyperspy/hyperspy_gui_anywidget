@@ -235,17 +235,34 @@ class IntSliderWidget(AnyWidget):
       const readout = el.querySelector(".readout");
       const label = el.querySelector("label");
 
+      // _dragging guards against change:value events fired while the user is
+      // actively holding the slider.  _pendingSent tracks every value sent to
+      // Python so that round-trip confirmations (echo_update / update) for
+      // those values are suppressed — otherwise delayed confirmations for
+      // intermediate drag positions reset the slider after the user releases.
+      let _dragging = false;
+      const _pendingSent = [];
+
       function commitValue() {
+        _dragging = false;
         const val = parseInt(input.value);
         model.set("value", val);
         model.save_changes();
         readout.textContent = val;
       }
 
+      function clearDragging() {
+        _dragging = false;
+      }
+      window.addEventListener("mouseup", clearDragging);
+      window.addEventListener("touchend", clearDragging);
+
       input.addEventListener("input", () => {
+        _dragging = true;
         const val = parseInt(input.value);
         readout.textContent = val;
-        if (model.get("continuous_update")) {
+        if (model.get("continuous_update") !== false) {
+          _pendingSent.push(val);
           model.set("value", val);
           model.save_changes();
         }
@@ -253,7 +270,13 @@ class IntSliderWidget(AnyWidget):
       input.addEventListener("change", commitValue);
 
       model.on("change:value", () => {
+        if (_dragging) return;
         const val = model.get("value");
+        const idx = _pendingSent.indexOf(val);
+        if (idx !== -1) {
+          _pendingSent.splice(idx, 1);
+          return;
+        }
         input.value = val;
         readout.textContent = val;
       });
@@ -343,17 +366,29 @@ class FloatSliderWidget(AnyWidget):
       const readout = el.querySelector(".readout");
       const label = el.querySelector("label");
 
+      let _dragging = false;
+      const _pendingSent = [];
+
       function commitValue() {
+        _dragging = false;
         const val = parseFloat(input.value);
         model.set("value", val);
         model.save_changes();
         readout.textContent = formatFloat(val, model.get("readout_format"));
       }
 
+      function clearDragging() {
+        _dragging = false;
+      }
+      window.addEventListener("mouseup", clearDragging);
+      window.addEventListener("touchend", clearDragging);
+
       input.addEventListener("input", () => {
+        _dragging = true;
         const val = parseFloat(input.value);
         readout.textContent = formatFloat(val, model.get("readout_format"));
-        if (model.get("continuous_update")) {
+        if (model.get("continuous_update") !== false) {
+          _pendingSent.push(val);
           model.set("value", val);
           model.save_changes();
         }
@@ -361,7 +396,13 @@ class FloatSliderWidget(AnyWidget):
       input.addEventListener("change", commitValue);
 
       model.on("change:value", () => {
+        if (_dragging) return;
         const val = model.get("value");
+        const idx = _pendingSent.indexOf(val);
+        if (idx !== -1) {
+          _pendingSent.splice(idx, 1);
+          return;
+        }
         input.value = val;
         readout.textContent = formatFloat(val, model.get("readout_format"));
       });
@@ -916,6 +957,7 @@ def _make_flat_container(children, layout, **kwargs):
     else:
         configs = _flatten_widget_tree(children)
     container = FlatContainer(_children_config=configs, _layout=layout)
+    container._source_children = children
     _wire_flat_sync(container, children)
     return container
 
@@ -924,12 +966,17 @@ def _wire_flat_sync(container, children):
     """Wire bidirectional sync between FlatContainer and child widgets."""
     idx_map = {}
     leaf_idx = 0
+    _applying = False  # re-entrancy guard
 
     def _map_children(kids):
         nonlocal leaf_idx
         for child in kids:
             if isinstance(child, (VBox, HBox)):
                 _map_children(child.children)
+            elif isinstance(child, FlatContainer) and hasattr(child, "_source_children"):
+                # Recurse into nested FlatContainers so the outer sync can reach
+                # leaf widgets that are embedded by _flatten_widget_tree.
+                _map_children(child._source_children)
             else:
                 idx_map[str(id(child))] = (leaf_idx, child)
                 leaf_idx += 1
@@ -937,10 +984,18 @@ def _wire_flat_sync(container, children):
     _map_children(children)
 
     def _frontend_to_python(change):
-        for cfg_id, new_value in change["new"].items():
-            if cfg_id in idx_map:
-                _, widget = idx_map[cfg_id]
-                _apply_value(widget, new_value)
+        nonlocal _applying
+        if _applying:
+            return
+        _applying = True
+        try:
+            old_vals = change.get("old", {})
+            for cfg_id, new_value in change["new"].items():
+                if cfg_id in idx_map and old_vals.get(cfg_id) != new_value:
+                    _, widget = idx_map[cfg_id]
+                    _apply_value(widget, new_value)
+        finally:
+            _applying = False
 
     container.observe(_frontend_to_python, names="_children_values")
 
@@ -1029,6 +1084,8 @@ class FlatContainer(AnyWidget):
       el.style.flexWrap = "wrap";
 
       const idToEl = {};
+      const draggingSliders = new Set();
+      const _pendingSentBySlider = new Map();
       const stack = [{ parent: el, layout: layout }];
 
       function makeRow(cfg) {
@@ -1051,9 +1108,17 @@ class FlatContainer(AnyWidget):
               colorEl.value = colorPickerValue(val);
             }
           } else if (cfg.type === "slider") {
-            target.value = val;
-            const readout = target.parentElement.querySelector(".flat-readout");
-            if (readout) readout.textContent = fmt(val, cfg.readout_format);
+            if (!draggingSliders.has(id)) {
+              const pending = _pendingSentBySlider.get(id);
+              const pidx = pending ? pending.indexOf(val) : -1;
+              if (pidx !== -1) {
+                pending.splice(pidx, 1);
+              } else {
+                target.value = val;
+                const readout = target.parentElement.querySelector(".flat-readout");
+                if (readout) readout.textContent = fmt(val, cfg.readout_format);
+              }
+            }
           } else if (cfg.type === "checkbox") {
             target.checked = val;
           } else if (cfg.type === "label") {
@@ -1456,18 +1521,42 @@ class FlatContainer(AnyWidget):
             model.save_changes();
             readout.textContent = fmt(val, cfg.readout_format);
           }
+          function clearDragging() {
+            draggingSliders.delete(cfg.id);
+          }
+          window.addEventListener("mouseup", clearDragging);
+          window.addEventListener("touchend", clearDragging);
+
           input.addEventListener("input", () => {
+            draggingSliders.add(cfg.id);
             const val = cfg.type === "slider" && Number.isInteger(cfg.step) && Number.isInteger(cfg.value)
               ? parseInt(input.value) : parseFloat(input.value);
             readout.textContent = fmt(val, cfg.readout_format);
-            if (cfg.continuous_update) {
-              const newValues = { ...model.get("_children_values") };
-              newValues[cfg.id] = val;
-              model.set("_children_values", newValues);
+            if (cfg.continuous_update !== false) {
+              if (!_pendingSentBySlider.has(cfg.id)) _pendingSentBySlider.set(cfg.id, []);
+              _pendingSentBySlider.get(cfg.id).push(val);
+              // Send only this slider's value, not the full dict.  Spreading
+              // model.get("_children_values") would include stale sibling-widget
+              // values (e.g. vwidget) whose Python echo hasn't arrived yet.
+              // Python would then apply that stale value, reverting axis.index.
+              model.set("_children_values", { [cfg.id]: val });
               model.save_changes();
             }
           });
-          input.addEventListener("change", sliderUpdate);
+          input.addEventListener("change", () => {
+            draggingSliders.delete(cfg.id);
+            if (cfg.continuous_update === false) {
+              sliderUpdate();
+            } else {
+              // With continuous_update=true the input event already sent the
+              // final value to Python.  Calling sliderUpdate here would spread
+              // stale sibling-widget values (e.g. vwidget) whose Python echo
+              // has not yet arrived, causing Python to revert axis.index.
+              const val = Number.isInteger(cfg.step) && Number.isInteger(cfg.value)
+                ? parseInt(input.value) : parseFloat(input.value);
+              readout.textContent = fmt(val, cfg.readout_format);
+            }
+          });
         } else {
           input = document.createElement("input");
           input.type = "text";
