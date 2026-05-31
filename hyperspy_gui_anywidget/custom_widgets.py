@@ -1107,6 +1107,11 @@ class FlatContainer(AnyWidget):
         return normalizeColor(inputValue) || "#000000";
       }
 
+      if (model.get("_closed")) { el.style.display = "none"; return; }
+      model.on("change:_closed", () => {
+        if (model.get("_closed")) el.style.display = "none";
+      });
+
       el.style.display = "flex";
       el.style.flexDirection = layout === "horizontal" ? "row" : "column";
       el.style.gap = "10px";
@@ -1653,3 +1658,8 @@ class FlatContainer(AnyWidget):
     _children_config = traitlets.List().tag(sync=True)
     _children_values = traitlets.Dict(default_value={}).tag(sync=True)
     _layout = traitlets.Unicode("vertical").tag(sync=True)
+    _closed = traitlets.Bool(False).tag(sync=True)
+
+    def close(self):
+        self._closed = True
+        super().close()
