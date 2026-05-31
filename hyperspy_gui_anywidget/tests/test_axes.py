@@ -327,3 +327,72 @@ class TestMarimoPaths:
         assert index_widget.value == 0
         assert am[0].index == 0
         assert outer._children_values.get(slider_id) == 0
+
+    def test_axes_manager_gui_marimo_button_click_increments_clicks(self):
+        """Simulated button click via _children_values increments ButtonWidget.clicks."""
+        from hyperspy_gui_anywidget.custom_widgets import ButtonWidget, FlatContainer
+
+        btn = ButtonWidget(description="Click me")
+        clicks_seen = []
+        btn.observe(lambda c: clicks_seen.append(c["new"]), names="clicks")
+
+        container = FlatContainer()
+        from hyperspy_gui_anywidget.custom_widgets import _wire_flat_sync, _widget_config
+        from hyperspy_gui_anywidget.custom_widgets import _make_flat_container
+
+        # Build a minimal FlatContainer wired to the button
+        flat = _make_flat_container([btn], layout="vertical")
+        btn_id = str(id(btn))
+
+        assert btn.clicks == 0
+        # Simulate a browser click (JS increments the value to 1)
+        new_vals = dict(flat._children_values)
+        new_vals[btn_id] = 1
+        flat._children_values = new_vals
+        assert btn.clicks == 1
+        assert clicks_seen == [1]
+
+        # Second click
+        new_vals = dict(flat._children_values)
+        new_vals[btn_id] = 2
+        flat._children_values = new_vals
+        assert btn.clicks == 2
+
+    def test_axes_manager_gui_marimo_continuous_update_propagates(self):
+        """Changing continuous_update on the Python widget updates the _cu key."""
+        from hyperspy_gui_anywidget.custom_widgets import IntSliderWidget, _make_flat_container
+
+        slider = IntSliderWidget(min=0, max=10, value=0)
+        flat = _make_flat_container([slider], layout="vertical")
+        slider_id = str(id(slider))
+        cu_key = slider_id + "_cu"
+
+        # Initially the _cu key is absent (pushed only on change)
+        assert slider.continuous_update is True
+
+        # Changing continuous_update on the Python side should push the _cu key
+        slider.continuous_update = False
+        assert flat._children_values.get(cu_key) is False
+
+        slider.continuous_update = True
+        assert flat._children_values.get(cu_key) is True
+
+    def test_marimo_toggle_second_click_reverses(self):
+        """Two consecutive toggle updates via _children_values toggle correctly."""
+        from hyperspy_gui_anywidget.custom_widgets import ToggleButtonWidget, _make_flat_container
+
+        toggle = ToggleButtonWidget(value=False)
+        flat = _make_flat_container([toggle], layout="vertical")
+        toggle_id = str(id(toggle))
+
+        # First toggle: False → True
+        new_vals = dict(flat._children_values)
+        new_vals[toggle_id] = True
+        flat._children_values = new_vals
+        assert toggle.value is True
+
+        # Second toggle: True → False
+        new_vals = dict(flat._children_values)
+        new_vals[toggle_id] = False
+        flat._children_values = new_vals
+        assert toggle.value is False

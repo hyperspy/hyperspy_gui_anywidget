@@ -69,7 +69,7 @@ class TextWidget(AnyWidget):
       const value = model.get("value");
       const disabled = model.get("disabled");
       const visible = model.get("visible");
-      const showColor = description.toLowerCase().includes("olor");
+      const showColor = model.get("is_color");
 
       function normalizeColor(inputValue) {
         const canvas = document.createElement("canvas");
@@ -156,6 +156,7 @@ class TextWidget(AnyWidget):
     description = traitlets.Unicode("").tag(sync=True)
     disabled = traitlets.Bool(False).tag(sync=True)
     visible = traitlets.Bool(True).tag(sync=True)
+    is_color = traitlets.Bool(False).tag(sync=True)
 
 
 class IntTextWidget(AnyWidget):
@@ -705,7 +706,7 @@ class FloatRangeSliderWidget(AnyWidget):
       const min = model.get("min");
       const max = model.get("max");
       const step = model.get("step");
-      const value = model.get("value");
+      const value = model.get("value") || [0, 0];
       const description = model.get("description");
       el.innerHTML = `
         <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 5px;">
@@ -821,7 +822,7 @@ def _widget_config(w):
         cfg["label"] = w.description
         cfg["disabled"] = w.disabled
         cfg["visible"] = getattr(w, "visible", True)
-        cfg["is_color"] = "olor" in w.description.lower()
+        cfg["is_color"] = w.is_color
     elif isinstance(w, LabelWidget):
         cfg["type"] = "label"
         cfg["value"] = w.value
@@ -833,6 +834,7 @@ def _widget_config(w):
         cfg["type"] = "button"
         cfg["label"] = w.description
         cfg["tooltip"] = w.tooltip
+        cfg["value"] = w.clicks
     elif isinstance(w, ToggleButtonWidget):
         cfg["type"] = "toggle"
         cfg["value"] = w.value
@@ -845,6 +847,7 @@ def _widget_config(w):
         cfg["max"] = w.max
         cfg["step"] = w.step
         cfg["continuous_update"] = getattr(w, "continuous_update", True)
+        cfg["continuous_update_key"] = str(id(w)) + "_cu"
         cfg["readout_format"] = getattr(w, "readout_format", "")
         cfg["slider_width"] = getattr(w, "slider_width", "")
         cfg["visible"] = getattr(w, "visible", True)
@@ -858,7 +861,7 @@ def _widget_config(w):
         cfg["max"] = w.max
     elif isinstance(w, FloatRangeSliderWidget):
         cfg["type"] = "range_slider"
-        cfg["value"] = w.value
+        cfg["value"] = list(w.value) if w.value else [0.0, 100.0]
         cfg["label"] = w.description
         cfg["min"] = w.min
         cfg["max"] = w.max
@@ -1017,18 +1020,36 @@ def _wire_flat_sync(container, children):
 
             return _python_to_frontend
 
-        widget.observe(_make_observer(cfg_id, widget), names="value")
+        trait_name = "clicks" if isinstance(widget, ButtonWidget) else "value"
+        widget.observe(_make_observer(cfg_id, widget), names=trait_name)
+
+        if hasattr(type(widget), "continuous_update"):
+            cu_key = cfg_id + "_cu"
+
+            def _make_cu_observer(cu_k, w):
+                def _cu_to_frontend(change):
+                    current = dict(container._children_values)
+                    current[cu_k] = w.continuous_update
+                    container._children_values = current
+
+                return _cu_to_frontend
+
+            widget.observe(_make_cu_observer(cu_key, widget), names="continuous_update")
 
 
 def _extract_value(widget):
     if isinstance(widget, FloatRangeSliderWidget):
         return list(widget.value)
+    if isinstance(widget, ButtonWidget):
+        return widget.clicks
     return widget.value
 
 
 def _apply_value(widget, value):
     if isinstance(widget, FloatRangeSliderWidget):
         widget.value = list(value)
+    elif isinstance(widget, ButtonWidget):
+        widget.clicks = int(value)
     elif isinstance(widget, CheckboxWidget):
         widget.value = bool(value)
     elif isinstance(widget, (FloatTextWidget, FloatSliderWidget, BoundedFloatTextWidget)):
@@ -1094,6 +1115,7 @@ class FlatContainer(AnyWidget):
       const idToEl = {};
       const draggingSliders = new Set();
       const _pendingSentBySlider = new Map();
+      const _cuState = new Map();  // slider cfg.id → live continuous_update boolean
       const _onMouseUp = () => draggingSliders.clear();
       window.addEventListener("mouseup", _onMouseUp);
       window.addEventListener("touchend", _onMouseUp);
@@ -1110,6 +1132,7 @@ class FlatContainer(AnyWidget):
 
       function updateValues(newValues) {
         for (const [id, val] of Object.entries(newValues)) {
+          if (id.endsWith("_cu")) { _cuState.set(id, !!val); continue; }
           const el_info = idToEl[id];
           if (!el_info) continue;
           const { el: target, colorEl, cfg } = el_info;
@@ -1299,9 +1322,8 @@ class FlatContainer(AnyWidget):
           btn.textContent = cfg.label;
           btn.title = cfg.tooltip || "";
           btn.addEventListener("click", () => {
-            const newValues = { ...model.get("_children_values") };
-            newValues[cfg.id] = (newValues[cfg.id] || 0) + 1;
-            model.set("_children_values", newValues);
+            const prev = (model.get("_children_values") || {})[cfg.id] || 0;
+            model.set("_children_values", { [cfg.id]: prev + 1 });
             model.save_changes();
           });
           parent.appendChild(btn);
@@ -1315,10 +1337,8 @@ class FlatContainer(AnyWidget):
           btn.style.background = cfg.value ? "#2196F3" : "#e0e0e0";
           btn.style.color = cfg.value ? "white" : "black";
           btn.addEventListener("click", () => {
-            const current = model.get("_children_values") || {};
-            const newValues = { ...current };
-            newValues[cfg.id] = !(current[cfg.id] ?? cfg.value);
-            model.set("_children_values", newValues);
+            const cur = (model.get("_children_values") || {})[cfg.id] ?? cfg.value;
+            model.set("_children_values", { [cfg.id]: !cur });
             model.save_changes();
           });
           parent.appendChild(btn);
@@ -1375,9 +1395,7 @@ class FlatContainer(AnyWidget):
             select.appendChild(option);
           }
           select.addEventListener("change", () => {
-            const newValues = { ...model.get("_children_values") };
-            newValues[cfg.id] = select.value;
-            model.set("_children_values", newValues);
+            model.set("_children_values", { [cfg.id]: select.value });
             model.save_changes();
           });
           row.appendChild(select);
@@ -1412,9 +1430,8 @@ class FlatContainer(AnyWidget):
           parent.appendChild(row);
 
           input.addEventListener("change", () => {
-            const newValues = { ...model.get("_children_values") };
-            newValues[cfg.id] = typeof cfg.value === "number" ? parseFloat(input.value) : input.value;
-            model.set("_children_values", newValues);
+            const val = typeof cfg.value === "number" ? parseFloat(input.value) : input.value;
+            model.set("_children_values", { [cfg.id]: val });
             model.save_changes();
           });
           idToEl[cfg.id] = { el: input, cfg };
@@ -1437,9 +1454,8 @@ class FlatContainer(AnyWidget):
           parent.appendChild(row);
 
           input.addEventListener("change", () => {
-            const newValues = { ...model.get("_children_values") };
-            newValues[cfg.id] = typeof cfg.value === "number" ? parseFloat(input.value) : input.value;
-            model.set("_children_values", newValues);
+            const val = typeof cfg.value === "number" ? parseFloat(input.value) : input.value;
+            model.set("_children_values", { [cfg.id]: val });
             model.save_changes();
           });
           idToEl[cfg.id] = { el: input, cfg };
@@ -1454,9 +1470,10 @@ class FlatContainer(AnyWidget):
           label.style.textAlign = "right";
           label.style.marginRight = "5px";
           row.appendChild(label);
+          const rangeVal = cfg.value || [0, 0];
           const low = document.createElement("input");
           low.type = "number";
-          low.value = cfg.value[0];
+          low.value = rangeVal[0];
           low.step = cfg.step;
           low.style.flex = "1";
           row.appendChild(low);
@@ -1465,16 +1482,14 @@ class FlatContainer(AnyWidget):
           row.appendChild(dash);
           const high = document.createElement("input");
           high.type = "number";
-          high.value = cfg.value[1];
+          high.value = rangeVal[1];
           high.step = cfg.step;
           high.style.flex = "1";
           row.appendChild(high);
           parent.appendChild(row);
 
           function updateRange() {
-            const newValues = { ...model.get("_children_values") };
-            newValues[cfg.id] = [parseFloat(low.value), parseFloat(high.value)];
-            model.set("_children_values", newValues);
+            model.set("_children_values", { [cfg.id]: [parseFloat(low.value), parseFloat(high.value)] });
             model.save_changes();
           }
           low.addEventListener("change", updateRange);
@@ -1538,7 +1553,10 @@ class FlatContainer(AnyWidget):
             const val = cfg.type === "slider" && Number.isInteger(cfg.step) && Number.isInteger(cfg.value)
               ? parseInt(input.value) : parseFloat(input.value);
             readout.textContent = fmt(val, cfg.readout_format);
-            if (cfg.continuous_update !== false) {
+            const _cu = _cuState.has(cfg.continuous_update_key)
+              ? _cuState.get(cfg.continuous_update_key)
+              : cfg.continuous_update;
+            if (_cu !== false) {
               if (!_pendingSentBySlider.has(cfg.id)) _pendingSentBySlider.set(cfg.id, []);
               _pendingSentBySlider.get(cfg.id).push(val);
               // Send only this slider's value, not the full dict.  Spreading
@@ -1604,15 +1622,11 @@ class FlatContainer(AnyWidget):
 
         if (cfg.type !== "slider") {
           input.addEventListener("change", () => {
-            const newValues = { ...model.get("_children_values") };
-            if (cfg.type === "number") {
-              newValues[cfg.id] = parseFloat(input.value);
-            } else if (cfg.type === "checkbox") {
-              newValues[cfg.id] = input.checked;
-            } else {
-              newValues[cfg.id] = input.value;
-            }
-            model.set("_children_values", newValues);
+            let val;
+            if (cfg.type === "number") val = parseFloat(input.value);
+            else if (cfg.type === "checkbox") val = input.checked;
+            else val = input.value;
+            model.set("_children_values", { [cfg.id]: val });
             model.save_changes();
             if (colorInput) {
               colorInput.value = colorPickerValue(input.value);
@@ -1620,10 +1634,8 @@ class FlatContainer(AnyWidget):
           });
           if (colorInput) {
             colorInput.addEventListener("change", () => {
-              const newValues = { ...model.get("_children_values") };
               input.value = colorInput.value;
-              newValues[cfg.id] = colorInput.value;
-              model.set("_children_values", newValues);
+              model.set("_children_values", { [cfg.id]: colorInput.value });
               model.save_changes();
             });
           }
