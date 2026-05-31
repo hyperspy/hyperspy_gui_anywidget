@@ -300,6 +300,10 @@ class IntSliderWidget(AnyWidget):
       model.on("change:visible", () => {
         row.style.display = model.get("visible") ? "flex" : "none";
       });
+      return () => {
+        window.removeEventListener("mouseup", clearDragging);
+        window.removeEventListener("touchend", clearDragging);
+      };
     }
     export default { render };
     """
@@ -426,6 +430,10 @@ class FloatSliderWidget(AnyWidget):
       model.on("change:visible", () => {
         row.style.display = model.get("visible") ? "flex" : "none";
       });
+      return () => {
+        window.removeEventListener("mouseup", clearDragging);
+        window.removeEventListener("touchend", clearDragging);
+      };
     }
     export default { render };
     """
@@ -513,7 +521,7 @@ class BoundedFloatTextWidget(AnyWidget):
       el.innerHTML = `
         <div style="display: ${visible ? "flex" : "none"}; align-items: center; gap: 10px; margin-bottom: 5px;">
           <label style="min-width: 120px; text-align: right; margin-right: 5px;">${description}</label>
-          <input type="number" step="${step}" value="${value}" ${disabled ? "disabled" : ""} style="flex: 0 0 160px; width: 160px; max-width: 160px;">
+          <input type="number" min="${min}" max="${max}" step="${step}" value="${value}" ${disabled ? "disabled" : ""} style="flex: 0 0 160px; width: 160px; max-width: 160px;">
         </div>
       `;
       const row = el.querySelector("div");
@@ -1086,6 +1094,9 @@ class FlatContainer(AnyWidget):
       const idToEl = {};
       const draggingSliders = new Set();
       const _pendingSentBySlider = new Map();
+      const _onMouseUp = () => draggingSliders.clear();
+      window.addEventListener("mouseup", _onMouseUp);
+      window.addEventListener("touchend", _onMouseUp);
       const stack = [{ parent: el, layout: layout }];
 
       function makeRow(cfg) {
@@ -1304,8 +1315,9 @@ class FlatContainer(AnyWidget):
           btn.style.background = cfg.value ? "#2196F3" : "#e0e0e0";
           btn.style.color = cfg.value ? "white" : "black";
           btn.addEventListener("click", () => {
-            const newValues = { ...model.get("_children_values") };
-            newValues[cfg.id] = !cfg.value;
+            const current = model.get("_children_values") || {};
+            const newValues = { ...current };
+            newValues[cfg.id] = !(current[cfg.id] ?? cfg.value);
             model.set("_children_values", newValues);
             model.save_changes();
           });
@@ -1521,12 +1533,6 @@ class FlatContainer(AnyWidget):
             model.save_changes();
             readout.textContent = fmt(val, cfg.readout_format);
           }
-          function clearDragging() {
-            draggingSliders.delete(cfg.id);
-          }
-          window.addEventListener("mouseup", clearDragging);
-          window.addEventListener("touchend", clearDragging);
-
           input.addEventListener("input", () => {
             draggingSliders.add(cfg.id);
             const val = cfg.type === "slider" && Number.isInteger(cfg.step) && Number.isInteger(cfg.value)
@@ -1625,6 +1631,10 @@ class FlatContainer(AnyWidget):
 
         idToEl[cfg.id] = { el: input, colorEl: colorInput, cfg };
       }
+      return () => {
+        window.removeEventListener("mouseup", _onMouseUp);
+        window.removeEventListener("touchend", _onMouseUp);
+      };
     }
     export default { render };
     """
