@@ -28,11 +28,10 @@ app = marimo.App(
 @app.cell(hide_code=True)
 def _(mo):
     mo.md(r"""
-    # hyperspy_gui_anywidget in Jupyter
+    # hyperspy_gui_anywidget in Marimo
 
-    This notebook shows the normal Jupyter workflow for this project. In modern Jupyter Notebook and JupyterLab, installing the package is enough — you do not need to load a separate anywidget extension.
+    This notebook shows the normal Marimo workflow for this project.
 
-    Most users should keep the default `display=True`, which displays the widget inline as soon as you call the GUI method.
     """)
     return
 
@@ -72,7 +71,6 @@ def _(mo):
     mo.md(r"""
     ## ROI widgets
 
-    ROI widgets are usually the quickest interactive entry point.
     """)
     return
 
