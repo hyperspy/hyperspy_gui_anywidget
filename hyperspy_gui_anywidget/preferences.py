@@ -4,6 +4,7 @@
 import anywidget
 import traitlets
 import traits.trait_types
+from ipywidgets import Accordion, Tab, VBox
 from link_traits import link
 
 try:
@@ -313,8 +314,6 @@ def _build_preferences_widget(obj, titles):
         container = FlatContainer(_children_config=configs, _layout="vertical")
         _wire_flat_sync(container, all_kids)
     else:
-        from ipywidgets import Tab, VBox, Accordion
-
         tab_widgets = []
         for title in titles:
             tab_groups = ipytabs[title]
