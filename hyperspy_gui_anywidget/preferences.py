@@ -6,7 +6,11 @@ import traitlets
 import traits.trait_types
 from link_traits import link
 
-from hyperspy.misc.utils import grouped_editable_traits
+try:
+    from hyperspy.misc.utils import grouped_editable_traits
+except ImportError:
+    grouped_editable_traits = None
+
 from hyperspy_gui_anywidget.custom_widgets import CheckboxWidget
 from hyperspy_gui_anywidget.utils import (
     _Labeled,
@@ -243,7 +247,19 @@ def _build_preferences_widget(obj, titles):
         tabdict = {}
         wdict["tab_{}".format(tab)] = tabdict
         tabtraits = tab_obj.traits()
-        grouped = grouped_editable_traits(tab_obj)
+        grouped = grouped_editable_traits(tab_obj) if grouped_editable_traits else None
+
+        if grouped is None:
+            # hyperspy < 2.5: flat rendering fallback
+            ipytab_parts = []
+            for trait_name in tab_obj.editable_traits():
+                trait = tabtraits[trait_name]
+                widget = _get_widget_for_trait(trait, get_label(trait, trait_name))
+                ipytab_parts.append(widget)
+                tabdict[trait_name] = widget
+                link((tab_obj, trait_name), (widget, "value"))
+            ipytabs[tab] = {"General": ipytab_parts}
+            continue
 
         tab_groups = {}
         for group_label, trait_names in grouped.items():

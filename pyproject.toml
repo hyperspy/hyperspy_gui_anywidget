@@ -31,7 +31,7 @@ classifiers = [
   "Operating System :: MacOS",
 ]
 dependencies = [
-  "hyperspy>=2.5.0",
+  "hyperspy>=2.3.0",
   "anywidget>=0.9.0",
   "ipywidgets>=7.6.0",
   "link_traits",
