@@ -3,7 +3,7 @@ from datetime import datetime
 
 warnings.filterwarnings("ignore", message=".*Numba is not installed.*")
 
-import hyperspy_gui_anywidget
+import hyperspy_gui_anywidget  # noqa: E402
 
 project = "hyperspy_gui_anywidget"
 copyright = f"{datetime.today().year}, The HyperSpy developers"
