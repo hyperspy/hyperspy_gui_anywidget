@@ -499,7 +499,7 @@ def smooth_savitzky_golay_aw(obj, **kwargs):
         description="Differential order",
         slider_width="220px",
     )
-    color = TextWidget(description="Color")
+    color = TextWidget(description="Color", is_color=True)
     close = ButtonWidget(
         description="Close",
         tooltip="Close widget and remove the smoothed line from the signal figure.",
@@ -516,7 +516,11 @@ def smooth_savitzky_golay_aw(obj, **kwargs):
         differential_order.max = change.new
 
     polynomial_order.observe(update_diff_max, names="value")
-    link((obj, "line_color_ipy"), (color, "value"))
+    if hasattr(obj, "line_color_ipy"):
+        # traits renamed in hyperspy 2.5.0
+        link((obj, "line_color_ipy"), (color, "value"))
+    else:
+        link((obj, "line_color"), (color, "value"))
 
     box = ContainerWidget(
         children=[
@@ -574,7 +578,7 @@ def smooth_lowess_aw(obj, **kwargs):
     wdict = {}
     smoothing_parameter = FloatSliderWidget(min=0, max=1, description="Smoothing parameter")
     number_of_iterations = IntTextWidget(description="Number of iterations")
-    color = TextWidget(description="Color")
+    color = TextWidget(description="Color", is_color=True)
     close = ButtonWidget(
         description="Close",
         tooltip="Close widget and remove the smoothed line from the signal figure.",
@@ -585,7 +589,11 @@ def smooth_lowess_aw(obj, **kwargs):
     )
     link((obj, "smoothing_parameter"), (smoothing_parameter, "value"))
     link((obj, "number_of_iterations"), (number_of_iterations, "value"))
-    link((obj, "line_color_ipy"), (color, "value"))
+    if hasattr(obj, "line_color_ipy"):
+        # traits renamed in hyperspy 2.5.0
+        link((obj, "line_color_ipy"), (color, "value"))
+    else:
+        link((obj, "line_color"), (color, "value"))
 
     box = ContainerWidget(
         children=[
@@ -642,7 +650,7 @@ def smooth_tv_aw(obj, **kwargs):
     smoothing_parameter_max = FloatTextWidget(
         value=smoothing_parameter.max, description="Weight max"
     )
-    color = TextWidget(description="Color")
+    color = TextWidget(description="Color", is_color=True)
     close = ButtonWidget(
         description="Close",
         tooltip="Close widget and remove the smoothed line from the signal figure.",
@@ -653,7 +661,12 @@ def smooth_tv_aw(obj, **kwargs):
     )
     link((obj, "smoothing_parameter"), (smoothing_parameter, "value"))
     link((smoothing_parameter_max, "value"), (smoothing_parameter, "max"))
-    link((obj, "line_color_ipy"), (color, "value"))
+    if hasattr(obj, "line_color_ipy"):
+        # traits renamed in hyperspy 2.5.0
+        link((obj, "line_color_ipy"), (color, "value"))
+    else:
+        link((obj, "line_color"), (color, "value"))
+
     wdict["smoothing_parameter"] = smoothing_parameter
     wdict["smoothing_parameter_max"] = smoothing_parameter_max
     wdict["color"] = color
@@ -1215,7 +1228,7 @@ def smooth_butterworth_aw(obj, **kwargs):
     cutoff = FloatSliderWidget(min=0.01, max=1.0, description="Cutoff")
     order = IntTextWidget(description="Order")
     type_ = _Dropdown(options=["low", "high"], value="low", description="Type")
-    color = TextWidget(description="Color")
+    color = TextWidget(description="Color", is_color=True)
     close = ButtonWidget(
         description="Close",
         tooltip="Close widget and remove the smoothed line from the signal figure.",
@@ -1227,7 +1240,12 @@ def smooth_butterworth_aw(obj, **kwargs):
     link((obj, "cutoff_frequency_ratio"), (cutoff, "value"))
     link((obj, "type"), (type_, "value"))
     link((obj, "order"), (order, "value"))
-    link((obj, "line_color_ipy"), (color, "value"))
+    if hasattr(obj, "line_color_ipy"):
+        # traits renamed in hyperspy 2.5.0
+        link((obj, "line_color_ipy"), (color, "value"))
+    else:
+        link((obj, "line_color"), (color, "value"))
+
     wdict["cutoff"] = cutoff
     wdict["order"] = order
     wdict["type"] = type_
