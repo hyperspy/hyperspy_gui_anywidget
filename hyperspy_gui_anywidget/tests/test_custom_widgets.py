@@ -2,6 +2,7 @@ import sys
 from unittest.mock import patch
 
 from ipywidgets import Accordion, HBox, Tab, VBox
+import pytest
 
 from hyperspy_gui_anywidget.custom_widgets import (
     ContainerWidget,
@@ -36,13 +37,14 @@ def test_widget_config_preserves_slider_metadata():
     assert cfg["visible"] is False
 
 
-def test_widget_config_marks_color_text_widgets():
-    widget = TextWidget(value="red", description="Color", disabled=True, visible=False)
+@pytest.mark.parametrize("is_color", [True, False])
+def test_widget_config_marks_color_text_widgets(is_color):
+    widget = TextWidget(value="red", description="Color", disabled=True, visible=False, is_color=is_color)
 
     cfg = _widget_config(widget)
 
     assert cfg["type"] == "text"
-    assert cfg["is_color"] is True
+    assert cfg["is_color"] is is_color
     assert cfg["disabled"] is True
     assert cfg["visible"] is False
 
