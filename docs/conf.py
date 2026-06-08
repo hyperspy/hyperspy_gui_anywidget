@@ -1,9 +1,9 @@
 import warnings
 from datetime import datetime
 
-warnings.filterwarnings("ignore", message=".*Numba is not installed.*")
-
 import hyperspy_gui_anywidget
+
+warnings.filterwarnings("ignore", message=".*Numba is not installed.*")
 
 project = "hyperspy_gui_anywidget"
 copyright = f"{datetime.today().year}, The HyperSpy developers"
@@ -16,7 +16,7 @@ extensions = [
     "sphinx.ext.viewcode",
 ]
 
-exclude_patterns = ["_build"]
+exclude_patterns = ["_build", "AGENTS.md"]
 source_suffix = {
     ".md": "markdown",
     ".rst": "restructuredtext",

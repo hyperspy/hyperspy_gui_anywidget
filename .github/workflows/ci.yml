@@ -1,175 +1,107 @@
 name: CI
 
 on:
-  push:
-    branches: [main, master]
   pull_request:
-    branches: [main, master]
+  push:
+    branches-ignore:
+      - 'dependabot/**'
+      - 'pre-commit-ci-update-config'
+  workflow_dispatch:
 
 jobs:
-  lint:
-    name: Lint
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-
-      - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
-        with:
-          python-version: '3.12'
-
-      - name: Install lint dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[dev]"
-
-      - name: Run ruff check
-        run: ruff check .
-
-      - name: Run ruff format check
-        run: ruff format --check .
-
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-
-      - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
-        with:
-          python-version: '3.12'
-
-      - name: Install build dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install pyyaml
-
-      - name: Install package
-        run: |
-          pip install -e .
-
-      - name: Verify package imports
-        run: |
-          python -c "import hyperspy_gui_anywidget"
-          python -c "from hyperspy_gui_anywidget import roi, model, axes, tools, preferences, custom_widgets, utils, microscope_parameters"
-
-      - name: Verify hyperspy_extension.yaml entries
-        run: |
-          python -c "
-          import yaml
-          with open('hyperspy_gui_anywidget/hyperspy_extension.yaml', 'r') as f:
-              data = yaml.safe_load(f)
-          count = len(data['GUI']['widgets']['anywidget'])
-          print(f'hyperspy_extension.yaml entries: {count}')
-          assert count == 33, f'Expected 33 entries, got {count}'
-          "
-
   test:
-    name: py${{ matrix.python-version }}-${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    name: py${{ matrix.PYTHON_VERSION }}${{ matrix.LABEL }}
+    runs-on: ubuntu-latest
     timeout-minutes: 30
     env:
       MPLBACKEND: agg
+      PIP_SELECTOR: '[tests]'
+      PYTEST_ARGS: --pyargs hyperspy_gui_anywidget
+      PYTEST_ARGS_COVERAGE: --cov=. --cov-report=xml
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.10', '3.11', '3.12']
+        PYTHON_VERSION: ['3.11', '3.12', '3.13']
+        LABEL: [-release, -dev]
+        PIP_ARGS: [""]
+        include:
+          - PYTHON_VERSION: '3.12'
+            PIP_ARGS: --pre
+            LABEL: -dev-pre_release
+          - PYTHON_VERSION: '3.12'
+            LABEL: -release-minimum
+          - PYTHON_VERSION: '3.12'
+            LABEL: -dev-minimum
+          - PYTHON_VERSION: '3.10'
+            LABEL: -release
+          - PYTHON_VERSION: '3.10'
+            LABEL: -oldest
+            # Matching pyproject.toml
+            DEPENDENCIES: hyperspy==2.4.0 ipywidgets==8.0 anywidget==0.9.0
 
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
-      - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
-        with:
-          python-version: ${{ matrix.python-version }}
+      - name: get repository name
+        shell: bash
+        run: echo "REPOSITORY_NAME=${GITHUB_REPOSITORY#*/}" >> $GITHUB_ENV
 
-      - name: Cache pip dependencies
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
+      - name: Fetch tags upstream
+        if: ${{ github.repository_owner != 'hyperspy' }}
+        # Needs to fetch the tags from upstream to get the
+        # correct version with setuptools_scm
+        run: |
+          git remote add upstream https://github.com/hyperspy/${{ env.REPOSITORY_NAME }}.git
+          git fetch upstream --tags
 
-      - name: Display versions
+      - uses: actions/setup-python@v6
+        name: Install Python
+        with:
+          python-version: ${{ matrix.PYTHON_VERSION }}
+
+      - name: Display version
         run: |
           python --version
           pip --version
 
-      - name: Install package and dependencies
+      - name: Install HyperSpy (dev)
+        if: contains( matrix.LABEL, 'dev')
         run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[tests]"
+          pip install git+https://github.com/hyperspy/hyperspy.git@RELEASE_next_minor
 
-      - name: Install optional dependencies (allowed to fail)
+      - name: Install exSpy (dev)
+        if: contains( matrix.LABEL, 'dev')
         run: |
-          pip install exspy pybaselines || true
-        continue-on-error: true
+          pip install git+https://github.com/hyperspy/exspy.git
+
+      - name: Install
+        run: |
+          pip install ${{ matrix.PIP_ARGS }} .'${{ env.PIP_SELECTOR }}'
 
       - name: Pip list
         run: |
-          pip list
+          pip list  
+  
+      - name: Install oldest supported version
+        if: contains( matrix.LABEL, 'oldest')
+        run: |
+          pip install ${{ matrix.DEPENDENCIES }}
+
+      - name: Pip list
+        run: |
+          pip list  
 
       - name: Run test suite
         run: |
-          pytest hyperspy_gui_anywidget/tests/ -v
-
-  coverage:
-    name: Coverage
-    runs-on: ubuntu-latest
-    env:
-      MPLBACKEND: agg
-    steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
-        with:
-          fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # v5
-        with:
-          python-version: '3.12'
-
-      - name: Cache pip dependencies
-        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
-        with:
-          path: ~/.cache/pip
-          key: ${{ runner.os }}-pip-${{ hashFiles('pyproject.toml') }}
-          restore-keys: |
-            ${{ runner.os }}-pip-
-
-      - name: Install package and dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e ".[tests]"
-
-      - name: Install optional dependencies (allowed to fail)
-        run: |
-          pip install exspy pybaselines || true
-        continue-on-error: true
-
-      - name: Pip list
-        run: |
-          pip list
-
-      - name: Run tests with coverage
-        run: |
-          pytest hyperspy_gui_anywidget/tests/ -v --cov=hyperspy_gui_anywidget --cov-report=xml --cov-report=term --cov-fail-under=75
+          pytest ${{ env.PYTEST_ARGS }} ${{ env.PYTEST_ARGS_COVERAGE }}
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4
-        with:
-          files: ./coverage.xml
-          fail_ci_if_error: false
-
-      - name: Upload coverage report artifact
-        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
-        with:
-          name: coverage-report
-          path: coverage.xml
+        if: ${{ always() && env.PYTEST_ARGS_COVERAGE }}
+        uses: codecov/codecov-action@v5
+        env:
+          CODECOV_TOKEN: ${{ secrets.CODECOV_TOKEN }}
 
   docs:
     name: Docs

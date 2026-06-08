@@ -17,11 +17,23 @@ class TestSetMicroscopeParameters:
         md = s.metadata
         wd = s.set_microscope_parameters(**KWARGS)["anywidget"]["wdict"]
         if signal_type == "EELS":
-            mapping = exspy.signals.eels.EELSTEMParametersUI.mapping
+            try:
+                # exspy <= 0.3.2
+                mapping = exspy.signals.eels.EELSTEMParametersUI.mapping
+            except AttributeError:
+                mapping = exspy.signals._eels.EELSTEMParametersUI.mapping
         elif signal_type == "EDS_SEM":
-            mapping = exspy.signals.eds_sem.EDSSEMParametersUI.mapping
+            try:
+                # exspy <= 0.3.2
+                mapping = exspy.signals.eds_sem.EDSSEMParametersUI.mapping
+            except AttributeError:
+                mapping = exspy.signals._eds_sem.EDSSEMParametersUI.mapping
         elif signal_type == "EDS_TEM":
-            mapping = exspy.signals.eds_tem.EDSTEMParametersUI.mapping
+            try:
+                # exspy <= 0.3.2
+                mapping = exspy.signals.eds_tem.EDSTEMParametersUI.mapping
+            except AttributeError:
+                mapping = exspy.signals._eds_tem.EDSTEMParametersUI.mapping
         for key, widget in wd.items():
             if "button" not in key:
                 widget.value = random()
