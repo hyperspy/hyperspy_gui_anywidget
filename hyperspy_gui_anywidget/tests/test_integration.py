@@ -22,9 +22,9 @@ class TestWidgetRegistry:
             function_name = mapping["function"]
             module = importlib.import_module(module_name)
             func = getattr(module, function_name, None)
-            assert callable(func), (
-                f"{module_name}.{function_name} is not callable for toolkey '{toolkey}'"
-            )
+            assert callable(
+                func
+            ), f"{module_name}.{function_name} is not callable for toolkey '{toolkey}'"
 
     def test_import_all_modules(self):
         # Import all submodules to verify they are importable
