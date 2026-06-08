@@ -4,7 +4,7 @@
 import anywidget
 import traitlets
 import traits.trait_types
-from ipywidgets import Accordion, Tab, VBox
+from ipywidgets import Accordion, HBox, Tab, VBox
 from link_traits import link
 
 try:
@@ -12,7 +12,7 @@ try:
 except ImportError:
     grouped_editable_traits = None
 
-from hyperspy_gui_anywidget.custom_widgets import CheckboxWidget
+from hyperspy_gui_anywidget.custom_widgets import ButtonWidget, CheckboxWidget
 from hyperspy_gui_anywidget.utils import (
     _Labeled,
     add_display_arg,
@@ -279,6 +279,9 @@ def _build_preferences_widget(obj, titles):
     save_button.observe(lambda _: obj.save(), names="clicks")
     wdict["save_button"] = save_button
 
+    close_button = ButtonWidget(description="Close", tooltip="Close the preferences widget.")
+    wdict["close_button"] = close_button
+
     import sys
 
     if "marimo" in sys.modules:
@@ -306,10 +309,12 @@ def _build_preferences_widget(obj, titles):
                 all_kids.extend(group_widgets)
             configs.append({"type": "tab_end"})
 
-        configs.append({"type": "layout_start", "direction": "column"})
+        configs.append({"type": "layout_start", "direction": "row"})
         configs.append(_widget_config(save_button))
+        configs.append(_widget_config(close_button))
         configs.append({"type": "layout_end"})
         all_kids.append(save_button)
+        all_kids.append(close_button)
 
         container = FlatContainer(_children_config=configs, _layout="vertical")
         _wire_flat_sync(container, all_kids)
@@ -328,7 +333,15 @@ def _build_preferences_widget(obj, titles):
         tabs_widget = Tab(children=tab_widgets)
         for i, title in enumerate(titles):
             tabs_widget.set_title(i, str(title))
-        container = VBox(children=[tabs_widget, save_button])
+        button_box = HBox(children=[save_button, close_button])
+        container = VBox(children=[tabs_widget, button_box])
+
+    def on_close_clicked(change):
+        if hasattr(obj, "close"):
+            obj.close()
+        if hasattr(container, "close"):
+            container.close()
+    close_button.observe(on_close_clicked, names="clicks")
 
     return {
         "widget": container,

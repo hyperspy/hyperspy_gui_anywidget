@@ -24,6 +24,7 @@ def test_preferences_widget(module):
     wd = result["anywidget"]["wdict"]
 
     assert "save_button" in wd
+    assert "close_button" in wd
 
     tab_keys = [k for k in wd.keys() if k.startswith("tab_")]
     assert len(tab_keys) > 0
