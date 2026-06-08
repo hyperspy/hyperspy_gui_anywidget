@@ -4,7 +4,13 @@
 import anywidget
 import traitlets
 import traits.trait_types
+from ipywidgets import Accordion, Tab, VBox
 from link_traits import link
+
+try:
+    from hyperspy.misc.utils import grouped_editable_traits
+except ImportError:
+    grouped_editable_traits = None
 
 from hyperspy_gui_anywidget.custom_widgets import CheckboxWidget
 from hyperspy_gui_anywidget.utils import (
@@ -238,19 +244,36 @@ def _build_preferences_widget(obj, titles):
     wdict = {}
 
     for tab in obj.editable_traits():
+        tab_obj = getattr(obj, tab)
         tabdict = {}
         wdict["tab_{}".format(tab)] = tabdict
-        ipytab = []
-        tabtraits = getattr(obj, tab).traits()
+        tabtraits = tab_obj.traits()
+        grouped = grouped_editable_traits(tab_obj) if grouped_editable_traits else None
 
-        for trait_name in getattr(obj, tab).editable_traits():
-            trait = tabtraits[trait_name]
-            widget = _get_widget_for_trait(trait, get_label(trait, trait_name))
-            ipytab.append(widget)
-            tabdict[trait_name] = widget
-            link((getattr(obj, tab), trait_name), (widget, "value"))
+        if grouped is None:
+            # hyperspy < 2.5: flat rendering fallback
+            ipytab_parts = []
+            for trait_name in tab_obj.editable_traits():
+                trait = tabtraits[trait_name]
+                widget = _get_widget_for_trait(trait, get_label(trait, trait_name))
+                ipytab_parts.append(widget)
+                tabdict[trait_name] = widget
+                link((tab_obj, trait_name), (widget, "value"))
+            ipytabs[tab] = {"General": ipytab_parts}
+            continue
 
-        ipytabs[tab] = ipytab
+        tab_groups = {}
+        for group_label, trait_names in grouped.items():
+            group_widgets = []
+            for trait_name in trait_names:
+                trait = tabtraits[trait_name]
+                widget = _get_widget_for_trait(trait, get_label(trait, trait_name))
+                group_widgets.append(widget)
+                tabdict[trait_name] = widget
+                link((tab_obj, trait_name), (widget, "value"))
+            tab_groups[group_label] = group_widgets
+
+        ipytabs[tab] = tab_groups
 
     save_button = _SaveButton()
     save_button.observe(lambda _: obj.save(), names="clicks")
@@ -270,11 +293,17 @@ def _build_preferences_widget(obj, titles):
 
         for title in titles:
             configs.append({"type": "tab_start", "title": str(title)})
-            configs.append({"type": "layout_start", "direction": "column"})
-            for widget in ipytabs[title]:
-                configs.append(_widget_config(widget))
-            configs.append({"type": "layout_end"})
-            all_kids.extend(ipytabs[title])
+            tab_groups = ipytabs[title]
+            for group_label, group_widgets in tab_groups.items():
+                if len(tab_groups) > 1:
+                    configs.append({"type": "accordion_start", "titles": [group_label]})
+                configs.append({"type": "layout_start", "direction": "column"})
+                for widget in group_widgets:
+                    configs.append(_widget_config(widget))
+                configs.append({"type": "layout_end"})
+                if len(tab_groups) > 1:
+                    configs.append({"type": "accordion_end"})
+                all_kids.extend(group_widgets)
             configs.append({"type": "tab_end"})
 
         configs.append({"type": "layout_start", "direction": "column"})
@@ -285,9 +314,17 @@ def _build_preferences_widget(obj, titles):
         container = FlatContainer(_children_config=configs, _layout="vertical")
         _wire_flat_sync(container, all_kids)
     else:
-        from ipywidgets import Tab, VBox
-
-        tab_widgets = [VBox(children=ipytabs[title]) for title in titles]
+        tab_widgets = []
+        for title in titles:
+            tab_groups = ipytabs[title]
+            if len(tab_groups) > 1:
+                accordion_children = [VBox(children=widgets) for widgets in tab_groups.values()]
+                accordion = Accordion(children=accordion_children)
+                for i, label in enumerate(tab_groups.keys()):
+                    accordion.set_title(i, str(label))
+                tab_widgets.append(accordion)
+            else:
+                tab_widgets.append(VBox(children=list(tab_groups.values())[0]))
         tabs_widget = Tab(children=tab_widgets)
         for i, title in enumerate(titles):
             tabs_widget.set_title(i, str(title))

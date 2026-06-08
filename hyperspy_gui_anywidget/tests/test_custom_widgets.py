@@ -37,7 +37,9 @@ def test_widget_config_preserves_slider_metadata():
 
 
 def test_widget_config_marks_color_text_widgets():
-    widget = TextWidget(value="red", description="Color", disabled=True, visible=False)
+    widget = TextWidget(
+        value="red", description="Color", disabled=True, visible=False, is_color=True
+    )
 
     cfg = _widget_config(widget)
 
