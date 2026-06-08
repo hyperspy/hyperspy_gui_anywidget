@@ -330,14 +330,12 @@ class TestMarimoPaths:
 
     def test_axes_manager_gui_marimo_button_click_increments_clicks(self):
         """Simulated button click via _children_values increments ButtonWidget.clicks."""
-        from hyperspy_gui_anywidget.custom_widgets import ButtonWidget, FlatContainer
+        from hyperspy_gui_anywidget.custom_widgets import ButtonWidget
 
         btn = ButtonWidget(description="Click me")
         clicks_seen = []
         btn.observe(lambda c: clicks_seen.append(c["new"]), names="clicks")
 
-        container = FlatContainer()
-        from hyperspy_gui_anywidget.custom_widgets import _wire_flat_sync, _widget_config
         from hyperspy_gui_anywidget.custom_widgets import _make_flat_container
 
         # Build a minimal FlatContainer wired to the button
