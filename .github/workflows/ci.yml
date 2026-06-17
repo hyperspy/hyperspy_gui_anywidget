@@ -160,7 +160,7 @@ jobs:
           pytest hyperspy_gui_anywidget/tests/ -v --cov=hyperspy_gui_anywidget --cov-report=xml --cov-report=term --cov-fail-under=75
 
       - name: Upload coverage to Codecov
-        uses: codecov/codecov-action@b9fd7d16f6d7d1b5d2bec1a2887e65ceed900238 # v4
+        uses: codecov/codecov-action@e79a6962e0d4c0c17b229090214935d2e33f8354 # v6.0.1
         with:
           files: ./coverage.xml
           fail_ci_if_error: false
