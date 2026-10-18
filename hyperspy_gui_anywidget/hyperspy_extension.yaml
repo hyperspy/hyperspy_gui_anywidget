@@ -31,6 +31,9 @@ GUI:
       exspy.EELSSpectrum.print_edges_table:
         module: hyperspy_gui_anywidget.tools
         function: print_edges_table_aw
+      exspy.EDSSpectrum.print_lines_table:
+        module: hyperspy_gui_anywidget.tools
+        function: print_lines_table_aw
       hyperspy.ScalableFixedPattern_Component:
         module: hyperspy_gui_anywidget.model
         function: get_scalable_fixed_patter_widget

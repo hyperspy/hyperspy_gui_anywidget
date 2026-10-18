@@ -8,6 +8,7 @@ from hyperspy.signal_tools import (
 from link_traits import link
 
 from hyperspy_gui_anywidget.custom_widgets import (
+    BoundedFloatTextWidget,
     ButtonWidget,
     CheckboxWidget,
     ContainerWidget,
@@ -26,6 +27,7 @@ from hyperspy_gui_anywidget.custom_widgets import (
 from hyperspy_gui_anywidget.utils import (
     _Dropdown,
     add_display_arg,
+    debounce,
     enum2dropdown,
     labelme,
 )
@@ -446,6 +448,185 @@ def print_edges_table_aw(obj, **kwargs):
             ContainerWidget(children=[reset, close], layout="horizontal"),
         ],
         layout="vertical",
+    )
+
+    return {
+        "widget": box,
+        "wdict": wdict,
+    }
+
+
+@add_display_arg
+def print_lines_table_aw(obj, **kwargs):
+    """Build a widget for interactively finding X-ray lines in an EDS signal.
+
+    Parameters
+    ----------
+    obj : exspy._signal_tools.EDSRange
+        The X-ray lines tool instance exposing ``position``, ``width`` and
+        ``only_lines`` traits, ``get_lines_information()``,
+        ``update_markers()`` and ``selected_elements``.
+    **kwargs
+        Passed through to the widget builder.
+
+    Returns
+    -------
+    dict or None
+        ``{"widget": ContainerWidget, "wdict": {...}}`` when
+        ``display=False``, otherwise ``None`` (widget displayed inline).
+    """
+    wdict = {}
+    # The three labeled controls stay on one row; narrow fields keep the
+    # toolbar width close to the table grid below it.
+    position = BoundedFloatTextWidget(
+        min=0,
+        description="Position (keV)",
+        step=0.01,
+        decimals=2,
+        input_width="55px",
+        label_min_width="0px",
+    )
+    width = BoundedFloatTextWidget(
+        min=0, description="Width (keV)", step=0.1, input_width="55px", label_min_width="0px"
+    )
+    only_lines = enum2dropdown(
+        obj.traits()["only_lines"], description="Only lines", select_width="55px"
+    )
+    # The Jupyter HBox applies no gap between children, so the controls
+    # are spaced per instance; the Marimo flat renderer adds its own gap.
+    position.layout.margin = "0 10px 0 0"
+    width.layout.margin = "0 10px 0 0"
+    update = ButtonWidget(description="Refresh table")
+    gb = ContainerWidget(
+        children=[],
+        layout="grid",
+        grid_template_columns="70px 70px 100px 100px 100px",
+    )
+    help_text = HTMLWidget(
+        value=(
+            "Move the vertical line to select a signal range. "
+            "Select X-ray lines in the table to show their positions "
+            "on the signal."
+        )
+    )
+    help = ContainerWidget(children=[help_text], layout="accordion", titles=["Help"])
+    close = ButtonWidget(description="Close", tooltip="Close the widget.")
+
+    # Header and entry cells use the ipywidgets inline line-height so the
+    # text rows stretch like the sibling toolkit's labels; the header
+    # underline mirrors its header labels (border_bottom='1px solid grey').
+    header = '<p style="text-align: center; padding: 0px; margin: 0px; font-weight:bold; line-height: var(--jp-widgets-inline-height, 28px); border-bottom: 1px solid grey">{}</p>'
+    entry = '<p style="text-align: center; padding: 0px; margin: 0px; line-height: var(--jp-widgets-inline-height, 28px)">{}</p>'
+    entry_left = '<p style="text-align: left; padding: 0px; margin: 0px; line-height: var(--jp-widgets-inline-height, 28px)">{}</p>'
+
+    wdict["position"] = position
+    wdict["width"] = width
+    wdict["only_lines"] = only_lines
+    wdict["gb"] = gb
+    wdict["help"] = help
+    wdict["update"] = update
+    wdict["close"] = close
+
+    link((obj, "position"), (position, "value"))
+    link((obj, "width"), (width, "value"))
+    link((obj, "only_lines"), (only_lines, "value"))
+
+    header_items = [
+        HTMLWidget(value=header.format("Element")),
+        HTMLWidget(value=header.format("Line")),
+        HTMLWidget(value=header.format("Energy (keV)")),
+        HTMLWidget(value=header.format("Weight")),
+        HTMLWidget(value=header.format("Intensity")),
+    ]
+
+    def update_selected_elements(change):
+        element = change["owner"].description
+        initial_length = len(obj.selected_elements)
+        if change["new"]:
+            obj.selected_elements.add(element)
+        else:
+            if element in obj.selected_elements:
+                obj.selected_elements.remove(element)
+        if len(obj.selected_elements) != initial_length:
+            obj.update_markers()
+
+    # Reused row widgets: updating the traits of existing widgets keeps
+    # their views alive, so a table refresh does not flash the whole
+    # grid. Only a changed row count adds or removes DOM nodes; an equal
+    # children assignment fires no traitlets event at all.
+    row_widgets = []
+
+    @debounce(0.1)
+    def update_table(change):
+        lines_information = obj.get_lines_information()
+        rows = []
+        if lines_information is not None:
+            for element_str in lines_information.keys():
+                element = lines_information[element_str]
+                for line in element.keys():
+                    line_info = element[line]
+                    rows.append((element_str, line, line_info))
+        for i, (element_str, line, line_info) in enumerate(rows):
+            if i < len(row_widgets):
+                btn, wline, wenergy, wweight, wintensity = row_widgets[i]
+                # Reset reused toggles without firing the selection
+                # observer so a refresh behaves like the fresh buttons
+                # of a full rebuild: the table renders unpressed while
+                # ``obj.selected_elements`` is left untouched.
+                if btn.value or btn.description != element_str:
+                    btn.unobserve(update_selected_elements, names="value")
+                    btn.value = False
+                    btn.observe(update_selected_elements, names="value")
+                btn.description = element_str
+                wline.value = entry.format(str(line))
+                wenergy.value = entry.format(f"{line_info['energy_keV']:#.4g}")
+                wweight.value = entry.format(f"{line_info['weight']:#.4g}")
+                wintensity.value = entry_left.format(line_info["intensity"])
+            else:
+                # 75px fills the element column, matching the
+                # ipywidgets toolkit ToggleButton width.
+                btn = ToggleButtonWidget(value=False, description=element_str, button_width="75px")
+                btn.observe(update_selected_elements, names="value")
+                wline = HTMLWidget(value=entry.format(str(line)))
+                wenergy = HTMLWidget(value=entry.format(f"{line_info['energy_keV']:#.4g}"))
+                wweight = HTMLWidget(value=entry.format(f"{line_info['weight']:#.4g}"))
+                wintensity = HTMLWidget(value=entry_left.format(line_info["intensity"]))
+                row_widgets.append([btn, wline, wenergy, wweight, wintensity])
+        del row_widgets[len(rows) :]
+        items = header_items.copy()
+        for row in row_widgets:
+            items.extend(row)
+        gb.children = items
+
+    position.observe(update_table, names="value")
+    width.observe(update_table, names="value")
+    only_lines.observe(update_table, names="value")
+    update.observe(update_table, names="clicks")
+
+    # Initialize the table at the current position
+    update_table(None)
+
+    def on_close_clicked(change):
+        obj.close()
+        if hasattr(box, "close"):
+            box.close()
+
+    close.observe(on_close_clicked, names="clicks")
+
+    energy_box = ContainerWidget(
+        children=[position, width, only_lines],
+        layout="horizontal",
+        max_width="440px",
+    )
+    box = ContainerWidget(
+        children=[
+            energy_box,
+            gb,
+            help,
+            ContainerWidget(children=[update, close], layout="horizontal"),
+        ],
+        layout="vertical",
+        max_width="440px",
     )
 
     return {

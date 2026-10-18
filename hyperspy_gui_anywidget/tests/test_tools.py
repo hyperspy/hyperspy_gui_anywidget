@@ -1,3 +1,6 @@
+import time
+from unittest.mock import patch
+
 import hyperspy.api as hs
 import numpy as np
 import pytest
@@ -9,6 +12,130 @@ from hyperspy.signal_tools import (
 from hyperspy.utils.baseline_removal_tool import BaselineRemoval
 
 from hyperspy_gui_anywidget.tests.utils import KWARGS
+
+pytest.importorskip("exspy")
+
+import exspy  # noqa: E402
+
+
+def test_lines_at_energy_interactive():
+    from exspy._signal_tools import EDSRange
+
+    s = exspy.data.EDS_TEM_FePt_nanoparticles()
+    er = EDSRange(s)
+    aw = er.gui(**KWARGS)["anywidget"]
+    wd = aw["wdict"]
+    assert wd["position"].value == 9.92
+    assert wd["position"].decimals == 2
+    assert wd["width"].value == 0.2
+    assert wd["only_lines"].value == "all"
+
+    er.position = 6.4
+    assert wd["position"].value == 6.4
+    er.width = 0.3
+    assert wd["width"].value == 0.3
+    er.only_lines = "a"
+    assert wd["only_lines"].value == "a"
+
+    wd["position"].value = 8.0
+    assert er.position == 8.0
+    wd["width"].value = 0.25
+    assert er.width == 0.25
+
+    # Table rebuilds happen through the debounced callback, hence the sleeps
+    er.position = 6.4
+    er.only_lines = "a"
+    time.sleep(0.3)
+    assert len(wd["gb"].children) > 5
+    # The table is laid out with one column per field
+    assert wd["gb"].layout.grid_template_columns == "70px 70px 100px 100px 100px"
+    # Controls stay on one row with narrow fields so the whole widget does
+    # not grow far beyond the table's grid width.
+    assert wd["position"].input_width == "55px"
+    assert wd["only_lines"].select_width == "55px"
+    # Content-sized labels remove the dead space a right-aligned
+    # min-width 120px label leaves before the next control.
+    assert wd["position"].label_min_width == "0px"
+    assert wd["width"].label_min_width == "0px"
+    # The Jupyter HBox has no default gap; the margins space the controls.
+    assert wd["position"].layout.margin == "0 10px 0 0"
+    assert wd["width"].layout.margin == "0 10px 0 0"
+    # Width parity with the ipywidgets toolkit: those builders cap the
+    # toolbar row and the outer box at 440px.
+    assert aw["widget"].children[0].layout.max_width == "440px"
+    assert aw["widget"].layout.max_width == "440px"
+    header_values = [w.value for w in wd["gb"].children[:5]]
+    for expected in ("Element", "Line", "Energy (keV)", "Weight", "Intensity"):
+        assert any(expected in h for h in header_values)
+
+    # The first row's element button fills its grid column like the
+    # ipywidgets toolkit (ToggleButton width 75px).
+    assert wd["gb"].children[5].button_width == "75px"
+
+    wd["update"].clicks += 1
+    time.sleep(0.3)
+    assert len(wd["gb"].children) > 5
+
+
+def test_lines_table_rows_update_in_place():
+    from exspy._signal_tools import EDSRange
+
+    s = exspy.data.EDS_TEM_FePt_nanoparticles()
+    er = EDSRange(s)
+    wd = er.gui(**KWARGS)["anywidget"]["wdict"]
+    gb = wd["gb"]
+    # The initial table is built by the debounced callback, hence the sleep.
+    time.sleep(0.3)
+
+    first_btn = gb.children[5]
+    first_line = gb.children[6]
+    assert first_btn.description == "Ge"
+
+    first_btn.value = True
+    assert "Ge" in er.selected_elements
+
+    er.position = 10.6
+    time.sleep(0.3)
+    # A refresh updates the row widgets in place instead of recreating
+    # the views, which is what removes the notebook flicker.
+    assert gb.children[5] is first_btn
+    assert gb.children[6] is first_line
+    assert first_btn.description == "As"
+    # The reset matches fresh buttons: unpressed, selection retained.
+    assert first_btn.value is False
+    assert "Ge" in er.selected_elements
+    assert len(gb.children) == 25
+
+    # The reused toggle still selects the new element.
+    first_btn.value = True
+    assert "As" in er.selected_elements
+
+    # A smaller table drops the excess rows only.
+    er.position = 11.0
+    time.sleep(0.3)
+    assert gb.children[5] is first_btn
+    assert first_btn.description == "Ge"
+    assert len(gb.children) == 20
+
+    er.position = 9.92
+    time.sleep(0.3)
+    assert gb.children[5] is first_btn
+    assert first_btn.description == "Ge"
+    assert len(gb.children) == 25
+    assert first_btn.value is False
+    assert er.selected_elements == {"Ge", "As"}
+
+
+def test_lines_at_energy_close():
+    from exspy._signal_tools import EDSRange
+
+    s = exspy.data.EDS_TEM_FePt_nanoparticles()
+    er = EDSRange(s)
+    wd = er.gui(**KWARGS)["anywidget"]["wdict"]
+
+    with patch.object(er, "close", wraps=er.close) as mock_close:
+        wd["close"].clicks += 1
+        mock_close.assert_called_once()
 
 
 class TestTools:

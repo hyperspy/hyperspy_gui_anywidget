@@ -84,7 +84,7 @@ Before claiming any task is complete, verify ALL of the following:
   ``<!-- MANUAL -->`` lines
 - [ ] Never suppress type/lint errors with blanket ignores
   (``# type: ignore``, ``# noqa`` without justification)
-- [ ] ``hyperspy_extension.yaml`` entry count must remain 33; any addition
+- [ ] ``hyperspy_extension.yaml`` entry count must remain 34; any addition
   or removal must be justified and accounted for in tests and CI
 
 ## News fragments

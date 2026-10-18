@@ -1,0 +1,10 @@
+Add a widget to interactively find X-ray lines in an EDS signal
+(``s.lines_at_energy(toolkit="anywidget")``), displaying a table of the
+lines within the selected energy range laid out with the element, line,
+energy, weight and intensity in separate columns. Selecting an element in
+the table shows its lines on the signal. Also adds a ``debounce`` helper
+used by the table callbacks to avoid rebuilding the table on every
+intermediate trait change and a ``grid`` layout support to the
+``ContainerWidget``.
+
+Requires an eXSpy version providing the ``lines_at_energy`` functionality.

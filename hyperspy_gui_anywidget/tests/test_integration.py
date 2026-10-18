@@ -9,13 +9,13 @@ from hyperspy_gui_anywidget.tests.utils import KWARGS
 
 
 class TestWidgetRegistry:
-    """Verify all 33 widget functions are registered and importable."""
+    """Verify all 34 widget functions are registered and importable."""
 
     def test_all_widgets_registered(self):
         yaml_path = Path(__file__).parent.parent / "hyperspy_extension.yaml"
         data = yaml.safe_load(yaml_path.read_text())
         widgets = data["GUI"]["widgets"]["anywidget"]
-        assert len(widgets) == 33, f"Expected 33 widgets, got {len(widgets)}"
+        assert len(widgets) == 34, f"Expected 34 widgets, got {len(widgets)}"
 
         for toolkey, mapping in widgets.items():
             module_name = mapping["module"]

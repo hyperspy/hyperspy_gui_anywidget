@@ -138,3 +138,8 @@ Before claiming any task is complete, verify ALL of the following:
 - Sphinx, MyST, and pydata-sphinx-theme — documentation build stack.
 
 <!-- MANUAL: Any manually added notes below this line are preserved on regeneration -->
+
+Note (2026-10-17): the `hyperspy_extension.yaml` entry count changed from 33
+to 34 to register `exspy.EDSSpectrum.print_lines_table`, porting the
+`print_lines_table` widget from hyperspy_gui_ipywidgets PR #95. The count is
+asserted in `hyperspy_gui_anywidget/tests/test_integration.py`.

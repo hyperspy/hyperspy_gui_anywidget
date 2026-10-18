@@ -102,6 +102,7 @@ venv.bak/
 # Tooling state
 .claude/
 .omc/
+.omo/
 !.omc/project-memory.json
 .opencode/
 .ruff_cache/

@@ -1,9 +1,13 @@
 # -*- coding: utf-8 -*-
 
+import contextvars
 import sys
+import time
+import types
 from unittest.mock import MagicMock, patch
 
 import anywidget
+import pytest
 import traitlets
 
 from hyperspy_gui_anywidget import utils
@@ -153,6 +157,160 @@ def test_set_title_container_with_set_title():
     utils.set_title_container(container, ["Tab A", "Tab B"])
     container.set_title.assert_any_call(0, "Tab A")
     container.set_title.assert_any_call(1, "Tab B")
+
+
+def test_debounce_cancels_intermediate_calls():
+    calls = []
+
+    @utils.debounce(0.02)
+    def fn(value):
+        calls.append(value)
+
+    fn(1)
+    time.sleep(0.2)
+    fn(2)
+    fn(3)
+    fn(4)
+    fn(5)
+    time.sleep(0.5)
+    assert calls == [1, 5]
+    calls.clear()
+    fn(10)
+    fn(11)
+    fn(12)
+    time.sleep(0.5)
+    assert calls == [12]
+
+
+def test_debounce_waits_for_last_invocation():
+    calls = []
+
+    @utils.debounce(0.5)
+    def fn(value):
+        calls.append(value)
+
+    fn(1)
+    time.sleep(0.2)
+    assert calls == []
+    time.sleep(0.6)
+    assert calls == [1]
+
+
+def test_debounce_runs_with_context_captured_at_call_time():
+    var = contextvars.ContextVar("test_var")
+    calls = []
+
+    @utils.debounce(0.1)
+    def fn():
+        calls.append(var.get())
+
+    var.set(1)
+    fn()
+    var.set(2)
+    time.sleep(0.3)
+    assert calls == [1]
+
+
+def test_marimo_off_cell_lifecycle_fix_resolves_items_without_running_cell():
+    """marimo's CellLifecycleRegistry.add silently strands lifecycle items
+    when a context exists but no cell is running (e.g. widget construction
+    from a debounce Timer thread), which later raises
+    ``assert self._virtual_file is not None`` in marimo's virtual_file.py.
+    The package patch must create such items eagerly and inject them into
+    the debounce owner cell so they are still disposed."""
+    pytest.importorskip("marimo")
+    from marimo._runtime.cell_lifecycle_registry import CellLifecycleRegistry
+
+    class FakeItem:
+        def __init__(self):
+            self.created_with = []
+
+        def create(self, context):
+            self.created_with.append(context)
+
+        def dispose(self, context, deletion):
+            return True
+
+    off_cell_ctx = types.SimpleNamespace(cell_id=None)
+    running_ctx = types.SimpleNamespace(cell_id="cell-running")
+    registry = CellLifecycleRegistry()
+
+    utils._install_marimo_off_cell_widget_fix()
+
+    no_owner = FakeItem()
+    with patch("marimo._runtime.context.get_context", return_value=off_cell_ctx):
+        registry.add(no_owner)
+    # Created (so it is never dereferenced uncreated) but attached to no
+    # cell because no debounce owner is published on this thread.
+    assert no_owner.created_with == [off_cell_ctx]
+    assert registry.registry == {}
+
+    owned = FakeItem()
+    utils._MARIMO_DEBOUNCE_OWNER_CELL.cell_id = "cell-owner"
+    try:
+        with patch("marimo._runtime.context.get_context", return_value=off_cell_ctx):
+            registry.add(owned)
+    finally:
+        utils._MARIMO_DEBOUNCE_OWNER_CELL.cell_id = None
+    # Injected into the owning cell so a re-run of that cell disposes it.
+    assert owned.created_with == [off_cell_ctx]
+    assert registry.registry["cell-owner"] == {owned}
+
+    on_cell = FakeItem()
+    with patch("marimo._runtime.context.get_context", return_value=running_ctx):
+        registry.add(on_cell)
+    assert on_cell.created_with == [running_ctx]
+    assert registry.registry["cell-running"] == {on_cell}
+
+    # Installing twice must not wrap the patch twice (one create per add).
+    utils._install_marimo_off_cell_widget_fix()
+    again = FakeItem()
+    with patch("marimo._runtime.context.get_context", return_value=running_ctx):
+        registry.add(again)
+    assert again.created_with == [running_ctx]
+
+
+def test_debounce_propagates_marimo_context_to_timer_thread(monkeypatch):
+    """Widget state broadcasts from a debounced callback must reach the
+    marimo frontend, which requires marimo's thread-local runtime context to
+    be re-installed on the ``threading.Timer`` thread (contextvars alone do
+    not carry it)."""
+    # The package detects marimo via sys.modules, so the real import done
+    # here must not leak into other tests.
+    marimo_modules_before = {k for k in sys.modules if k.partition(".")[0] == "marimo"}
+    try:
+        pytest.importorskip("marimo")
+        import marimo._runtime.context as context_mod
+        import marimo._runtime.context.types as context_types
+        from marimo._runtime.context import ContextNotInitializedError, get_context
+
+        sentinel = object()
+        monkeypatch.setattr(context_mod, "safe_get_context", lambda: sentinel)
+        monkeypatch.setattr(
+            context_types,
+            "_THREAD_LOCAL_CONTEXT",
+            context_types._ThreadLocalContext(),
+        )
+
+        seen = []
+
+        @utils.debounce(0.05)
+        def fn():
+            try:
+                seen.append(get_context())
+            except ContextNotInitializedError:
+                seen.append("no-context")
+
+        fn()
+        time.sleep(0.4)
+        assert seen == [sentinel]
+    finally:
+        for key in [
+            k
+            for k in sys.modules
+            if k.partition(".")[0] == "marimo" and k not in marimo_modules_before
+        ]:
+            del sys.modules[key]
 
 
 def test_set_title_container_fallback_to_titles_attribute():

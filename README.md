@@ -100,7 +100,7 @@ This package is built on a few key design decisions:
 
 4. **Environment-aware display** — The `@add_display_arg` decorator handles the difference between Jupyter and Marimo. In Marimo it flattens `VBox`/`HBox` roots before display when needed, and `display=False` always returns the raw `{"widget": ..., "wdict": ...}` dictionary.
 
-5. **33 widget functions** — All GUI functions return a dictionary with `"widget"` (the root AnyWidget) and `"wdict"` (a mapping of named sub-widgets). This pattern is consistent across ROI widgets, axis widgets, model widgets, tool widgets, and preference widgets.
+5. **34 widget functions** — All GUI functions return a dictionary with `"widget"` (the root AnyWidget) and `"wdict"` (a mapping of named sub-widgets). This pattern is consistent across ROI widgets, axis widgets, model widgets, tool widgets, and preference widgets.
 
 ## Running the tests
 
